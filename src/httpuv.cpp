@@ -272,13 +272,15 @@ public:
     return listToResponse(pRequest, response);
   }
 
-  void onWSOpen(WebSocketConnection* pConn) {
-    _onWSOpen(externalize(pConn));
+  void onWSOpen(HttpRequest* pRequest) {
+    Rcpp::Environment env = Rcpp::Function("new.env")();
+    requestToEnv(pRequest, &env);
+    _onWSOpen(externalize(pRequest), env);
   }
 
   void onWSMessage(WebSocketConnection* pConn, bool binary, const char* data, size_t len) {
     if (binary)
-      _onWSMessage(externalize(pConn), binary, std::vector<char>(data, data + len));
+      _onWSMessage(externalize(pConn), binary, std::vector<uint8_t>(data, data + len));
     else
       _onWSMessage(externalize(pConn), binary, std::string(data, len));
   }
@@ -310,20 +312,20 @@ void closeWS(std::string conn) {
 void destroyServer(std::string handle);
 
 // [[Rcpp::export]]
-Rcpp::RObject makeServer(const std::string& host, int port,
-                         Rcpp::Function onHeaders,
-                         Rcpp::Function onBodyData,
-                         Rcpp::Function onRequest,
-                         Rcpp::Function onWSOpen,
-                         Rcpp::Function onWSMessage,
-                         Rcpp::Function onWSClose) {
+Rcpp::RObject makeTcpServer(const std::string& host, int port,
+                            Rcpp::Function onHeaders,
+                            Rcpp::Function onBodyData,
+                            Rcpp::Function onRequest,
+                            Rcpp::Function onWSOpen,
+                            Rcpp::Function onWSMessage,
+                            Rcpp::Function onWSClose) {
 
   using namespace Rcpp;
   // Deleted when owning pHandler is deleted
   RWebApplication* pHandler = 
     new RWebApplication(onHeaders, onBodyData, onRequest, onWSOpen,
                         onWSMessage, onWSClose);
-  uv_tcp_t* pServer = createServer(
+  uv_stream_t* pServer = createTcpServer(
     uv_default_loop(), host.c_str(), port, (WebApplication*)pHandler);
 
   if (!pServer) {
@@ -335,8 +337,34 @@ Rcpp::RObject makeServer(const std::string& host, int port,
 }
 
 // [[Rcpp::export]]
+Rcpp::RObject makePipeServer(const std::string& name,
+                             int mask,
+                             Rcpp::Function onHeaders,
+                             Rcpp::Function onBodyData,
+                             Rcpp::Function onRequest,
+                             Rcpp::Function onWSOpen,
+                             Rcpp::Function onWSMessage,
+                             Rcpp::Function onWSClose) {
+
+  using namespace Rcpp;
+  // Deleted when owning pHandler is deleted
+  RWebApplication* pHandler = 
+    new RWebApplication(onHeaders, onBodyData, onRequest, onWSOpen,
+                        onWSMessage, onWSClose);
+  uv_stream_t* pServer = createPipeServer(
+    uv_default_loop(), name.c_str(), mask, (WebApplication*)pHandler);
+
+  if (!pServer) {
+    delete pHandler;
+    return R_NilValue;
+  }
+
+  return Rcpp::wrap(externalize(pServer));
+}
+
+// [[Rcpp::export]]
 void destroyServer(std::string handle) {
-  uv_tcp_t* pServer = internalize<uv_tcp_t>(handle);
+  uv_stream_t* pServer = internalize<uv_stream_t>(handle);
   freeServer(pServer);
 }
 
@@ -346,26 +374,6 @@ void dummy_close_cb(uv_handle_t* handle) {
 void stop_loop_timer_cb(uv_timer_t* handle, int status) {
   uv_stop(handle->loop);
 }
-
-#ifndef _WIN32
-// Linux uses sighandler_t and Mac uses sig_t, so define our own
-typedef void (*signal_handler_t)(int);
-
-class IgnoreSignal {
-  int _signum;
-  signal_handler_t _origHandler;
-
-public:
-  IgnoreSignal(int signum) : _signum(signum) {
-    _origHandler = signal(signum, SIG_IGN);
-  }
-
-  virtual ~IgnoreSignal() {
-    if (_origHandler != SIG_ERR)
-      signal(_signum, _origHandler);
-  }
-};
-#endif
 
 // Run the libuv default loop for roughly timeoutMillis, then stop
 // [[Rcpp::export]]
@@ -393,7 +401,7 @@ bool run(uint32_t timeoutMillis) {
   // Must ignore SIGPIPE when libuv code is running, otherwise unexpectedly
   // closing connections kill us
 #ifndef _WIN32
-  IgnoreSignal(SIGPIPE);
+  signal(SIGPIPE, SIG_IGN);
 #endif
   return uv_run(uv_default_loop(), UV_RUN_ONCE);
 }

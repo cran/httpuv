@@ -114,9 +114,9 @@ rookCall <- function(func, req, data = NULL, dataLength = -1) {
     
     if ('file' %in% names(resp$body)) {
       filename <- resp$body[['file']]
-      owned <- resp$body$owned
-      if (is.null(owned))
-        owned <- FALSE
+      owned <- FALSE
+      if ('owned' %in% names(resp$body))
+        owned <- as.logical(resp$body$owned)
 
       resp$body <- NULL
       resp$bodyFile <- filename
@@ -171,8 +171,8 @@ AppWrapper <- setRefClass(
       
       rookCall(.app$call, req, .bodyData, seek(.bodyData))
     },
-    onWSOpen = function(handle) {
-      ws <- WebSocket$new(handle)
+    onWSOpen = function(handle, req) {
+      ws <- WebSocket$new(handle, req)
       .wsconns[[as.character(handle)]] <<- ws
       result <- try(.app$onWSOpen(ws))
       
@@ -217,6 +217,16 @@ AppWrapper <- setRefClass(
 #' 
 #' WebSocket objects should never be created directly. They are obtained by
 #' passing an \code{onWSOpen} function to \code{\link{startServer}}.
+#'
+#' \strong{Fields}
+#'
+#'   \describe{
+#'     \item{\code{request}}{
+#'       The Rook request environment that opened the connection. This can be
+#'       used to inspect HTTP headers, for example.
+#'     }
+#'   }
+#'
 #' 
 #' \strong{Methods}
 #' 
@@ -248,11 +258,13 @@ WebSocket <- setRefClass(
   fields = list(
     '.handle' = 'ANY',
     '.messageCallbacks' = 'list',
-    '.closeCallbacks' = 'list'
+    '.closeCallbacks' = 'list',
+    'request' = 'environment'
   ),
   methods = list(
-    initialize = function(handle) {
+    initialize = function(handle, req) {
       .handle <<- handle
+      request <<- req
     },
     onMessage = function(func) {
       .messageCallbacks <<- c(.messageCallbacks, func)
@@ -318,18 +330,51 @@ WebSocket <- setRefClass(
 #'     The given object can be used to be notified when a message is received from
 #'     the client, to send messages to the client, etc. See \code{\link{WebSocket}}.}
 #'   }
+#'   
+#'   The \code{startPipeServer} variant can be used instead of 
+#'   \code{startServer} to listen on a Unix domain socket or named pipe rather
+#'   than a TCP socket (this is not common).
 #' @seealso \code{\link{runServer}}
+#' @aliases startPipeServer
 #' @export
 startServer <- function(host, port, app) {
   
   appWrapper <- AppWrapper$new(app)
-  server <- makeServer(host, port,
-                       appWrapper$onHeaders,
-                       appWrapper$onBodyData,
-                       appWrapper$call,
-                       appWrapper$onWSOpen,
-                       appWrapper$onWSMessage,
-                       appWrapper$onWSClose)
+  server <- makeTcpServer(host, port,
+                          appWrapper$onHeaders,
+                          appWrapper$onBodyData,
+                          appWrapper$call,
+                          appWrapper$onWSOpen,
+                          appWrapper$onWSMessage,
+                          appWrapper$onWSClose)
+  if (is.null(server)) {
+    stop("Failed to create server")
+  }
+  return(server)
+}
+
+#' @param name A string that indicates the path for the domain socket (on 
+#'   Unix-like systems) or the name of the named pipe (on Windows).
+#' @param mask If non-\code{NULL} and non-negative, this numeric value is used 
+#'   to temporarily modify the process's umask while the domain socket is being 
+#'   created. To ensure that only root can access the domain socket, use 
+#'   \code{strtoi("777", 8)}; or to allow owner and group read/write access, use
+#'   \code{strtoi("117", 8)}. If the value is \code{NULL} then the process's
+#'   umask is left unchanged. (This parameter has no effect on Windows.)
+#' @rdname startServer
+#' @export
+startPipeServer <- function(name, mask, app) {
+  
+  appWrapper <- AppWrapper$new(app)
+  if (is.null(mask))
+    mask <- -1
+  server <- makePipeServer(name, mask,
+                           appWrapper$onHeaders,
+                           appWrapper$onBodyData,
+                           appWrapper$call,
+                           appWrapper$onWSOpen,
+                           appWrapper$onWSMessage,
+                           appWrapper$onWSClose)
   if (is.null(server)) {
     stop("Failed to create server")
   }
