@@ -142,8 +142,7 @@ AppWrapper <- setRefClass(
   'AppWrapper',
   fields = list(
     .app = 'ANY',
-    .wsconns = 'environment',
-    .bodyData = 'ANY'
+    .wsconns = 'environment'
   ),
   methods = list(
     initialize = function(app) {
@@ -151,25 +150,26 @@ AppWrapper <- setRefClass(
         .app <<- list(call=app)
       else
         .app <<- app
-      .bodyData <<- NULL
     },
     onHeaders = function(req) {
-      .resetBody()
-
       if (is.null(.app$onHeaders))
         return(NULL)
 
       rookCall(.app$onHeaders, req)
     },
-    onBodyData = function(bytes) {
-      if (is.null(.bodyData))
-        .bodyData <<- file(open='w+b', encoding='UTF-8')
-      writeBin(bytes, .bodyData)
+    onBodyData = function(req, bytes) {
+      if (is.null(req$.bodyData))
+        req$.bodyData <- file(open='w+b', encoding='UTF-8')
+      writeBin(bytes, req$.bodyData)
     },
     call = function(req) {
-      on.exit(.resetBody())
-      
-      rookCall(.app$call, req, .bodyData, seek(.bodyData))
+      on.exit({
+        if (!is.null(req$.bodyData)) {
+          close(req$.bodyData)
+        }
+        req$.bodyData <- NULL
+      })
+      rookCall(.app$call, req, req$.bodyData, seek(req$.bodyData))
     },
     onWSOpen = function(handle, req) {
       ws <- WebSocket$new(handle, req)
@@ -199,12 +199,6 @@ AppWrapper <- setRefClass(
       for (handler in ws$.closeCallbacks) {
         handler()
       }
-    },
-    .resetBody = function() {
-      if (!is.null(.bodyData)) {
-        close(.bodyData)
-        .bodyData <<- NULL
-      }
     }
   )
 )
@@ -217,8 +211,8 @@ AppWrapper <- setRefClass(
 #' 
 #' WebSocket objects should never be created directly. They are obtained by
 #' passing an \code{onWSOpen} function to \code{\link{startServer}}.
-#'
-#' \strong{Fields}
+#' 
+#' @section Fields:
 #'
 #'   \describe{
 #'     \item{\code{request}}{
@@ -228,7 +222,7 @@ AppWrapper <- setRefClass(
 #'   }
 #'
 #' 
-#' \strong{Methods}
+#' @section Methods:
 #' 
 #'   \describe{
 #'     \item{\code{onMessage(func)}}{
@@ -251,6 +245,8 @@ AppWrapper <- setRefClass(
 #'       Closes the websocket connection.
 #'     }
 #'   }
+#'
+#' @param ... For internal use only.
 #' 
 #' @export
 WebSocket <- setRefClass(
@@ -451,8 +447,25 @@ runServer <- function(host, port, app,
   server <- startServer(host, port, app)
   on.exit(stopServer(server))
   
-  while (TRUE) {
+  .globals$stopped <- FALSE
+  while (!.globals$stopped) {
     service(interruptIntervalMs)
     Sys.sleep(0.001)
   }
 }
+
+#' Interrupt httpuv runloop
+#' 
+#' Interrupts the currently running httpuv runloop, meaning
+#' \code{\link{runServer}} or \code{\link{service}} will return control back to
+#' the caller and no further tasks will be processed until those methods are
+#' called again. Note that this may cause in-process uploads or downloads to be
+#' interrupted in mid-request.
+#' 
+#' @export
+interrupt <- function() {
+  stopLoop()
+  .globals$stopped <- TRUE
+}
+
+.globals <- new.env()

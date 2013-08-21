@@ -6,6 +6,10 @@
 #include <iostream>
 #include <vector>
 
+#include <Rcpp.h>
+#undef Realloc
+// Also need to undefine the Free macro
+#undef Free
 #include <uv.h>
 #include <http_parser.h>
 
@@ -29,10 +33,11 @@ enum Protocol {
 class WebApplication {
 public:
   virtual ~WebApplication() {}
-  virtual HttpResponse* onHeaders(HttpRequest* request) {
+  virtual HttpResponse* onHeaders(HttpRequest* pRequest) {
     return NULL;
   }
-  virtual void onBodyData(const char* data, size_t len) = 0;
+  virtual void onBodyData(HttpRequest* pRequest,
+                          const char* data, size_t len) = 0;
   virtual HttpResponse* getResponse(HttpRequest* request) = 0;
   virtual void onWSOpen(HttpRequest* pRequest) = 0;
   virtual void onWSMessage(WebSocketConnection* conn,
@@ -86,6 +91,7 @@ private:
   std::map<std::string, std::string, compare_ci> _headers;
   std::string _lastHeaderField;
   unsigned long _bytesRead;
+  Rcpp::Environment _env;
   // _ignoreNewData is used in cases where we rejected a request (by sending
   // a response with a non-100 status code) before its body was received. We
   // don't want to close the connection because the response might not be
@@ -110,13 +116,17 @@ public:
     _parser.data = this;
 
     _pSocket->addConnection(this);
+    
+    _env = Rcpp::Function("new.env")();
   }
 
   virtual ~HttpRequest() {
   }
 
   uv_stream_t* handle();
+  Address clientAddress();
   Address serverAddress();
+  Rcpp::Environment& env();
 
   void handleRequest();
 

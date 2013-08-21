@@ -79,7 +79,6 @@ void uv__udp_finish_close(uv_udp_t* handle) {
   }
 
   /* Now tear down the handle. */
-  handle->flags = 0;
   handle->recv_cb = NULL;
   handle->alloc_cb = NULL;
   /* but _do not_ touch close_cb */
@@ -216,7 +215,7 @@ static void uv__udp_recvmsg(uv_loop_t* loop,
     assert(buf.base != NULL);
 
     h.msg_namelen = sizeof(peer);
-    h.msg_iov = (struct iovec*)&buf;
+    h.msg_iov = (void*) &buf;
     h.msg_iovlen = 1;
 
     do {

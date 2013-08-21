@@ -76,6 +76,40 @@ Address HttpRequest::serverAddress() {
   return address;
 }
 
+Address HttpRequest::clientAddress() {
+  Address address;
+
+  if (_handle.isTcp) {
+    struct sockaddr_in addr = {0};
+    int len = sizeof(sockaddr_in);
+    int r = uv_tcp_getpeername(&_handle.tcp, (struct sockaddr*)&addr, &len);
+    if (r) {
+      // TODO: warn?
+      return address;
+    }
+
+    if (addr.sin_family != AF_INET) {
+      // TODO: warn
+      return address;
+    }
+
+    // addrstr is a pointer to static buffer, no need to free
+    char* addrstr = inet_ntoa(addr.sin_addr);
+    if (addrstr)
+      address.host = std::string(addrstr);
+    else {
+      // TODO: warn?
+    }
+    address.port = ntohs(addr.sin_port);
+  }
+
+  return address;
+}
+
+Rcpp::Environment& HttpRequest::env() {
+  return _env;
+}
+
 std::string HttpRequest::method() const {
   return http_method_str((enum http_method)_parser.method);
 }
@@ -215,7 +249,7 @@ int HttpRequest::_on_headers_complete(http_parser* pParser) {
 
 int HttpRequest::_on_body(http_parser* pParser, const char* pAt, size_t length) {
   trace("on_body");
-  _pWebApplication->onBodyData(pAt, length);
+  _pWebApplication->onBodyData(this, pAt, length);
   _bytesRead += length;
   return 0;
 }
@@ -479,6 +513,10 @@ void on_request(uv_stream_t* handle, int status) {
 uv_stream_t* createPipeServer(uv_loop_t* pLoop, const std::string& name,
   int mask, WebApplication* pWebApplication) {
 
+  // We own pWebApplication. It will be destroyed by the socket but if in
+  // the future we have failure cases that stop execution before we get
+  // that far, we MUST delete pWebApplication ourselves.
+
   // Deletes itself when destroy() is called, which occurs in freeServer()
   Socket* pSocket = new Socket();
   // TODO: Handle error
@@ -509,6 +547,10 @@ uv_stream_t* createPipeServer(uv_loop_t* pLoop, const std::string& name,
 
 uv_stream_t* createTcpServer(uv_loop_t* pLoop, const std::string& host,
   int port, WebApplication* pWebApplication) {
+
+  // We own pWebApplication. It will be destroyed by the socket but if in
+  // the future we have failure cases that stop execution before we get
+  // that far, we MUST delete pWebApplication ourselves.
 
   // Deletes itself when destroy() is called, which occurs in freeServer()
   Socket* pSocket = new Socket();

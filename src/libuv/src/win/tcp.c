@@ -50,7 +50,7 @@ static int uv__tcp_nodelay(uv_tcp_t* handle, SOCKET socket, int enable) {
                  TCP_NODELAY,
                  (const char*)&enable,
                  sizeof enable) == -1) {
-    uv__set_sys_error(handle->loop, errno);
+    uv__set_sys_error(handle->loop, WSAGetLastError());
     return -1;
   }
   return 0;
@@ -63,7 +63,7 @@ static int uv__tcp_keepalive(uv_tcp_t* handle, SOCKET socket, int enable, unsign
                  SO_KEEPALIVE,
                  (const char*)&enable,
                  sizeof enable) == -1) {
-    uv__set_sys_error(handle->loop, errno);
+    uv__set_sys_error(handle->loop, WSAGetLastError());
     return -1;
   }
 
@@ -72,7 +72,7 @@ static int uv__tcp_keepalive(uv_tcp_t* handle, SOCKET socket, int enable, unsign
                            TCP_KEEPALIVE,
                            (const char*)&delay,
                            sizeof delay) == -1) {
-    uv__set_sys_error(handle->loop, errno);
+    uv__set_sys_error(handle->loop, WSAGetLastError());
     return -1;
   }
 
@@ -113,7 +113,8 @@ static int uv_tcp_set_socket(uv_loop_t* loop, uv_tcp_t* handle,
     non_ifs_lsp = uv_tcp_non_ifs_lsp_ipv4;
   }
 
-  if (pSetFileCompletionNotificationModes && !non_ifs_lsp) {
+  if (pSetFileCompletionNotificationModes &&
+      !(handle->flags & UV_HANDLE_EMULATE_IOCP) && !non_ifs_lsp) {
     if (pSetFileCompletionNotificationModes((HANDLE) socket,
         FILE_SKIP_SET_EVENT_ON_HANDLE |
         FILE_SKIP_COMPLETION_PORT_ON_SUCCESS)) {

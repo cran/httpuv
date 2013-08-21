@@ -45,6 +45,9 @@
 # include <CoreServices/CoreServices.h>
 #endif
 
+#define STATIC_ASSERT(expr)                                                   \
+  void uv__static_assert(int static_assert_failed[1 - 2 * !(expr)])
+
 #define ACCESS_ONCE(type, var)                                                \
   (*(volatile type*) &(var))
 
@@ -109,7 +112,6 @@ enum {
 };
 
 /* core */
-void uv__handle_init(uv_loop_t* loop, uv_handle_t* handle, uv_handle_type type);
 int uv__nonblock(int fd, int set);
 int uv__cloexec(int fd, int set);
 int uv__socket(int domain, int type, int protocol);
@@ -146,6 +148,9 @@ void uv__stream_init(uv_loop_t* loop, uv_stream_t* stream,
     uv_handle_type type);
 int uv__stream_open(uv_stream_t*, int fd, int flags);
 void uv__stream_destroy(uv_stream_t* stream);
+#if defined(__APPLE__)
+int uv__stream_try_select(uv_stream_t* stream, int* fd);
+#endif /* defined(__APPLE__) */
 void uv__server_io(uv_loop_t* loop, uv__io_t* w, unsigned int events);
 int uv__accept(int sockfd);
 
@@ -250,5 +255,12 @@ __attribute__((unused))
 static void uv__update_time(uv_loop_t* loop) {
   loop->time = uv__hrtime() / 1000000;
 }
+
+#ifdef HAVE_DTRACE
+#include "uv-dtrace.h"
+#else
+#define UV_TICK_START(arg0, arg1)
+#define UV_TICK_STOP(arg0, arg1)
+#endif
 
 #endif /* UV_UNIX_INTERNAL_H_ */
