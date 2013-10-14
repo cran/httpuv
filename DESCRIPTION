@@ -1,8 +1,8 @@
 Package: httpuv
 Type: Package
 Title: HTTP and WebSocket server library
-Version: 1.1.0
-Date: 2013-08-21
+Version: 1.2.0
+Date: 2013-10-14
 Author: RStudio, Inc.
 Copyright: RStudio, Inc.; Joyent, Inc.; Nginx Inc.; Igor Sysoev; Niels
         Provos; Internet Systems Consortium, Inc.; Alexander Chemeris
@@ -19,7 +19,7 @@ Depends: R (>= 2.15.1), Rcpp (>= 0.10.2), methods
 LinkingTo: Rcpp
 URL: https://github.com/rstudio/httpuv
 SystemRequirements: GNU make
-Packaged: 2013-08-21 23:09:31 UTC; jcheng
+Packaged: 2013-10-14 16:44:00 UTC; jcheng
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-08-22 07:18:56
+Date/Publication: 2013-10-14 20:18:17
