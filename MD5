@@ -1,4 +1,4 @@
-dc1a6c27b7be911cbc1d6d8af669ac2c *DESCRIPTION
+b3023ba26757dc2a09c081a002535913 *DESCRIPTION
 a79ec0ed0a6d3543217cd2b0e1278d0d *LICENSE
 731feedae532408668249c21230bc6b2 *NAMESPACE
 e0b310441e45bd4bd4481906b2827d1f *NEWS
@@ -14,7 +14,7 @@ ed66ff576b63b994f3959f4a03c8275f *man/runServer.Rd
 5eacb18c1639ae6f53601c0dd3e6378c *man/service.Rd
 4ead313f6613ae7636c6c1d7de6dc036 *man/startServer.Rd
 1d17401e14d93b1c23947f09c5867812 *man/stopServer.Rd
-23294cdc3d279bbb513cc638a4d86a21 *src/Makevars
+1e4416d08b0c31cd1bfd6e52cbef966c *src/Makevars
 2eb8ea60f880f6edd0f4c2c476d6a2a5 *src/Makevars.win
 4273f77f80fe4296ba4c27d76028ee19 *src/RcppExports.cpp
 f5207d5ba0484a7474880f31c4371f54 *src/base64/base64.cpp
@@ -88,7 +88,7 @@ c4bbbc6519ef7911727feb887bbcf495 *src/libuv/src/unix/process.c
 301161c6ebd84ca306a2244894e45833 *src/libuv/src/unix/proctitle.c
 8fe982ffd711c6a39bb04f7d84d7d69a *src/libuv/src/unix/signal.c
 407d7c1445e38e596c44b44434853a78 *src/libuv/src/unix/stream.c
-879417a03459f3aa85a809e9048863d7 *src/libuv/src/unix/sunos.c
+c7303b7fadd4618a25605fc2eb8f36c6 *src/libuv/src/unix/sunos.c
 fbcb296bd342c1e1a7966a77977662a8 *src/libuv/src/unix/tcp.c
 633a297e9c34321b9616d85350fa9ac7 *src/libuv/src/unix/thread.c
 50d435745cfe570ae08a3252a30c2a07 *src/libuv/src/unix/threadpool.c
