@@ -1,6 +1,5 @@
 #include "uvutil.h"
 #include <string.h>
-#include <Rcpp/exceptions.h>
 
 void throwLastError(uv_loop_t* pLoop,
   const std::string& prefix,

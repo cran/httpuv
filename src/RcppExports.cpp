@@ -90,3 +90,13 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// base64encode
+std::string base64encode(const Rcpp::RawVector& x);
+RcppExport SEXP httpuv_base64encode(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::RawVector x = Rcpp::as<Rcpp::RawVector >(xSEXP);
+    std::string __result = base64encode(x);
+    return Rcpp::wrap(__result);
+END_RCPP
+}

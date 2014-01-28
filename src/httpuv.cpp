@@ -6,10 +6,9 @@
 #include <signal.h>
 #include <errno.h>
 #include <Rinternals.h>
-#undef Realloc
-// Also need to undefine the Free macro
-#undef Free
+#include "fixup.h"
 #include <uv.h>
+#include <base64.hpp>
 #include "uvutil.h"
 #include "http.h"
 #include "filedatasource.h"
@@ -411,4 +410,9 @@ bool run(uint32_t timeoutMillis) {
 // [[Rcpp::export]]
 void stopLoop() {
   uv_stop(uv_default_loop());
+}
+
+// [[Rcpp::export]]
+std::string base64encode(const Rcpp::RawVector& x) {
+  return b64encode(x.begin(), x.end());
 }
