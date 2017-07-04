@@ -1,13 +1,10 @@
 #define _FILE_OFFSET_BITS 64
-#include <Rcpp.h>
+
 #include <stdio.h>
 #include <map>
-#include <string>
 #include <iomanip>
 #include <signal.h>
 #include <errno.h>
-#include <Rinternals.h>
-#include "fixup.h"
 #include <uv.h>
 #include <base64.hpp>
 #include "uvutil.h"
@@ -379,7 +376,7 @@ void stop_loop_timer_cb(uv_timer_t* handle, int status) {
 
 // Run the libuv default loop for roughly timeoutMillis, then stop
 // [[Rcpp::export]]
-bool run(uint32_t timeoutMillis) {
+bool run(int timeoutMillis) {
   static uv_timer_t timer_req = {0};
   int r;
 
@@ -405,7 +402,7 @@ bool run(uint32_t timeoutMillis) {
 #ifndef _WIN32
   signal(SIGPIPE, SIG_IGN);
 #endif
-  return uv_run(uv_default_loop(), UV_RUN_ONCE);
+  return uv_run(uv_default_loop(), timeoutMillis == NA_INTEGER ? UV_RUN_NOWAIT : UV_RUN_ONCE);
 }
 
 // [[Rcpp::export]]
@@ -733,4 +730,19 @@ std::vector<std::string> decodeURIComponent(std::vector<std::string> value) {
   }
   
   return value;
+}
+
+//' Apply the value of .Random.seed to R's internal RNG state
+//'
+//' This function is needed in unusual cases where a C++ function calls
+//' an R function which sets the value of \code{.Random.seed}. This function
+//' should be called at the end of the R function to ensure that the new value
+//' \code{.Random.seed} is preserved. Otherwise, Rcpp may overwrite it with a
+//' previous value.
+//'
+//' @keywords internal
+//' @export
+// [[Rcpp::export]]
+void getRNGState() {
+  GetRNGstate();
 }
