@@ -1,4 +1,4 @@
-b08cdeebd2fd0e4131a8cfdb37b1a7e0 *DESCRIPTION
+9b3baf97b78103057b1ef19be04269e5 *DESCRIPTION
 a79ec0ed0a6d3543217cd2b0e1278d0d *LICENSE
 42051c9c9fb81313a3ec19023faabb41 *NAMESPACE
 d1db619f9212dc818d0f03f1de087fdd *NEWS
@@ -53,7 +53,7 @@ ff8706140fd91b74479676463510e156 *src/libuv/build.mk
 a106b48ab98b3324e3b43f8c921e070e *src/libuv/checksparse.sh
 f69f547d330865618a137f9dac651d28 *src/libuv/common.gypi
 d4c4de65d07a29431a93a3cc9516afe6 *src/libuv/config-mingw.mk
-2d89d2f6cb209d8485a2a3b75ccd66c9 *src/libuv/config-unix.mk
+b095131feaa93eaaf3ff0c3533132ed4 *src/libuv/config-unix.mk
 7447bd3e38137381a752091ede6cf785 *src/libuv/gyp_uv
 d1649849c22d8962bfe15422660fe7d7 *src/libuv/include/uv-private/ngx-queue.h
 42e5594ccee5f8f073e7931141d6e07e *src/libuv/include/uv-private/stdint-msvc2008.h
