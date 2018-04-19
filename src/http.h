@@ -1,37 +1,14 @@
 #ifndef HTTP_HPP
 #define HTTP_HPP
 
-#include <map>
-#include <iostream>
-
-#include <uv.h>
-#include <http_parser.h>
-
+#include "libuv/include/uv.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
+#include "webapplication.h"
 #include "websockets.h"
-#include "uvutil.h"
-
-class HttpRequest;
-struct HttpResponse;
-
-enum Protocol {
-  HTTP,
-  WebSockets
-};
-
-class WebApplication {
-public:
-  virtual ~WebApplication() {}
-  virtual HttpResponse* onHeaders(HttpRequest* pRequest) {
-    return NULL;
-  }
-  virtual void onBodyData(HttpRequest* pRequest,
-                          const char* data, size_t len) = 0;
-  virtual HttpResponse* getResponse(HttpRequest* request) = 0;
-  virtual void onWSOpen(HttpRequest* pRequest) = 0;
-  virtual void onWSMessage(WebSocketConnection* conn,
-                           bool binary, const char* data, size_t len) = 0;
-  virtual void onWSClose(WebSocketConnection* conn) = 0;
-};
+#include "callbackqueue.h"
+#include "utils.h"
+#include "auto_deleter.h"
 
 typedef struct {
   union {
@@ -42,22 +19,6 @@ typedef struct {
   bool isTcp;
 } VariantHandle;
 
-class Socket {
-public:
-  VariantHandle handle;
-  WebApplication* pWebApplication;
-  std::vector<HttpRequest*> connections;
-
-  Socket() {
-  }
-
-  void addConnection(HttpRequest* request);
-  void removeConnection(HttpRequest* request);
-
-  virtual ~Socket();
-  virtual void destroy();
-};
-
 struct Address {
   std::string host;
   unsigned short port;
@@ -66,146 +27,91 @@ struct Address {
   }
 };
 
-class HttpRequest : WebSocketConnectionCallbacks {
+class Socket;
 
-private:
-  uv_loop_t* _pLoop;
-  WebApplication* _pWebApplication;
-  VariantHandle _handle;
-  Socket* _pSocket;
-  http_parser _parser;
-  Protocol _protocol;
-  std::string _url;
-  RequestHeaders _headers;
-  std::string _lastHeaderField;
-  unsigned long _bytesRead;
-  Rcpp::Environment _env;
-  WebSocketConnection* _pWebSocketConnection;
-  // _ignoreNewData is used in cases where we rejected a request (by sending
-  // a response with a non-100 status code) before its body was received. We
-  // don't want to close the connection because the response might not be
-  // sent yet, but we don't want to parse any more data from this connection.
-  // (You would think uv_stop_read could be called, but it seems to prevent
-  // the response from being written as well.)
-  bool _ignoreNewData;
+uv_stream_t* createPipeServer(uv_loop_t* loop, const std::string& name, int mask,
+  boost::shared_ptr<WebApplication> pWebApplication);
 
-  void trace(const std::string& msg);
-
-public:
-  HttpRequest(uv_loop_t* pLoop, WebApplication* pWebApplication,
-      Socket* pSocket)
-    : _pLoop(pLoop), _pWebApplication(pWebApplication), _pSocket(pSocket),
-      _protocol(HTTP), _bytesRead(0),
-      _pWebSocketConnection(new WebSocketConnection(this)),
-      _ignoreNewData(false) {
-
-    uv_tcp_init(pLoop, &_handle.tcp);
-    _handle.isTcp = true;
-    _handle.stream.data = this;
-
-    http_parser_init(&_parser, HTTP_REQUEST);
-    _parser.data = this;
-
-    _pSocket->addConnection(this);
-
-    _env = Rcpp::Function("new.env")();
-  }
-
-  virtual ~HttpRequest() {
-    try {
-      delete _pWebSocketConnection;
-    } catch (...) {}
-  }
-
-  uv_stream_t* handle();
-  WebSocketConnection* websocket() const { return _pWebSocketConnection; }
-  Address clientAddress();
-  Address serverAddress();
-  Rcpp::Environment& env();
-
-  void handleRequest();
-
-  std::string method() const;
-  std::string url() const;
-  const RequestHeaders& headers() const;
-
-  void sendWSFrame(const char* pHeader, size_t headerSize,
-                   const char* pData, size_t dataSize,
-                   const char* pFooter, size_t footerSize);
-  void closeWSSocket();
-
-public:
-  // Callbacks
-  virtual int _on_message_begin(http_parser* pParser);
-  virtual int _on_url(http_parser* pParser, const char* pAt, size_t length);
-  virtual int _on_status_complete(http_parser* pParser);
-  virtual int _on_header_field(http_parser* pParser, const char* pAt, size_t length);
-  virtual int _on_header_value(http_parser* pParser, const char* pAt, size_t length);
-  virtual int _on_headers_complete(http_parser* pParser);
-  virtual int _on_body(http_parser* pParser, const char* pAt, size_t length);
-  virtual int _on_message_complete(http_parser* pParser);
-
-  virtual void onWSMessage(bool binary, const char* data, size_t len);
-  virtual void onWSClose(int code);
-
-  void fatal_error(const char* method, const char* message);
-  void _on_closed(uv_handle_t* handle);
-  void close();
-  void _on_request_read(uv_stream_t*, ssize_t nread, uv_buf_t buf);
-  void _on_response_write(int status);
-
-};
-
-struct HttpResponse {
-
-  HttpRequest* _pRequest;
-  int _statusCode;
-  std::string _status;
-  ResponseHeaders _headers;
-  std::vector<char> _responseHeader;
-  DataSource* _pBody;
-
-public:
-  HttpResponse(HttpRequest* pRequest, int statusCode,
-         const std::string& status, DataSource* pBody)
-    : _pRequest(pRequest), _statusCode(statusCode), _status(status), _pBody(pBody) {
-
-  }
-
-  virtual ~HttpResponse() {
-  }
-
-  ResponseHeaders& headers();
-
-  void addHeader(const std::string& name, const std::string& value);
-  void writeResponse();
-  void onResponseWritten(int status);
-};
-
-#define DECLARE_CALLBACK_1(type, function_name, return_type, type_1) \
-  return_type type##_##function_name(type_1 arg1);
-#define DECLARE_CALLBACK_3(type, function_name, return_type, type_1, type_2, type_3) \
-  return_type type##_##function_name(type_1 arg1, type_2 arg2, type_3 arg3);
-#define DECLARE_CALLBACK_2(type, function_name, return_type, type_1, type_2) \
-  return_type type##_##function_name(type_1 arg1, type_2 arg2);
-
-DECLARE_CALLBACK_1(HttpRequest, on_message_begin, int, http_parser*)
-DECLARE_CALLBACK_3(HttpRequest, on_url, int, http_parser*, const char*, size_t)
-DECLARE_CALLBACK_1(HttpRequest, on_status_complete, int, http_parser*)
-DECLARE_CALLBACK_3(HttpRequest, on_header_field, int, http_parser*, const char*, size_t)
-DECLARE_CALLBACK_3(HttpRequest, on_header_value, int, http_parser*, const char*, size_t)
-DECLARE_CALLBACK_1(HttpRequest, on_headers_complete, int, http_parser*)
-DECLARE_CALLBACK_3(HttpRequest, on_body, int, http_parser*, const char*, size_t)
-DECLARE_CALLBACK_1(HttpRequest, on_message_complete, int, http_parser*)
-DECLARE_CALLBACK_1(HttpRequest, on_closed, void, uv_handle_t*)
-DECLARE_CALLBACK_3(HttpRequest, on_request_read, void, uv_stream_t*, ssize_t, uv_buf_t)
-DECLARE_CALLBACK_2(HttpRequest, on_response_write, void, uv_write_t*, int)
-
-uv_stream_t* createPipeServer(uv_loop_t* loop, const std::string& name,
-  int mask, WebApplication* pWebApplication);
 uv_stream_t* createTcpServer(uv_loop_t* loop, const std::string& host, int port,
-  WebApplication* pWebApplication);
+  boost::shared_ptr<WebApplication> pWebApplication);
+
+void createPipeServerSync(uv_loop_t* loop, const std::string& name, int mask,
+  boost::shared_ptr<WebApplication> pWebApplication, CallbackQueue* background_queue,
+  uv_stream_t** pServer, Barrier* blocker);
+
+void createTcpServerSync(uv_loop_t* loop, const std::string& host, int port,
+  boost::shared_ptr<WebApplication> pWebApplication, CallbackQueue* background_queue,
+  uv_stream_t** pServer, Barrier* blocker);
+
 void freeServer(uv_stream_t* pServer);
 bool runNonBlocking(uv_loop_t* loop);
+
+
+// NOTE: externalize/internalize_shared_ptr were originally template functions
+// but were made into non-template functions because gcc 4.4.7 (used on RHEL
+// 6) gives the following error with the templated versions:
+//   sorry, unimplemented: mangling template_id_expr
+// This was due to a bug in gcc which was fixed in later versions.
+//   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=38600
+
+// externalize_shared_ptr is used to pass a shared_ptr to R, and have its
+// lifetime be tied to the R external pointer object. This function creates a
+// copy of the shared_ptr (incrementing the shared_ptr's target's refcount)
+// using `new`, and puts it inside of the XPtr. When the XPtr is garbage
+// collected, the shared_ptr is deleted, which decrements the refcount.
+//
+// As long as R has the XPtr object, the shared_ptr's target won't be deleted.
+// Also, when the XPtr gets GC'd, the shared_ptr will get deleted, and if the
+// refcount goes to 0, then the target object will be deleted (or, if it has a
+// deleter, that will be called). This means that the target object could be
+// deleted from the main thread due to a GC event in R.
+//
+// The reason we need the explicit Xptr type is because we want to set the last
+// argument (finalizeOnExit) to true.
+inline Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>,
+                  Rcpp::PreserveStorage,
+                  auto_deleter_background<boost::shared_ptr<WebSocketConnection>>,
+                  true> externalize_shared_ptr(boost::shared_ptr<WebSocketConnection> obj)
+{
+  ASSERT_MAIN_THREAD()
+  boost::shared_ptr<WebSocketConnection>* obj_copy = new boost::shared_ptr<WebSocketConnection>(obj);
+
+  Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>,
+             Rcpp::PreserveStorage,
+             auto_deleter_background<boost::shared_ptr<WebSocketConnection>>,
+             true> obj_xptr(obj_copy, true);
+
+  return obj_xptr;
+}
+
+// Given an XPtr to a shared_ptr, return a copy of the shared_ptr. This
+// increases the shared_ptr's ref count by one.
+inline boost::shared_ptr<WebSocketConnection> internalize_shared_ptr(
+  Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>,
+             Rcpp::PreserveStorage,
+             auto_deleter_background<boost::shared_ptr<WebSocketConnection>>,
+             true> obj_xptr)
+{
+  ASSERT_MAIN_THREAD()
+  boost::shared_ptr<WebSocketConnection>* obj_copy = obj_xptr.get();
+  // Return a copy of the shared pointer.
+  return *obj_copy;
+}
+
+
+template <typename T>
+std::string externalize_str(T* pServer) {
+  std::ostringstream os;
+  os << reinterpret_cast<uintptr_t>(pServer);
+  return os.str();
+}
+
+template <typename T>
+T* internalize_str(std::string serverHandle) {
+  std::istringstream is(serverHandle);
+  uintptr_t result;
+  is >> result;
+  return reinterpret_cast<T*>(result);
+}
 
 #endif // HTTP_HPP

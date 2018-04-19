@@ -44,7 +44,7 @@ struct fs_req {
 
 struct test_thread {
   uv_thread_t thread_id;
-  volatile int thread_called;
+  int thread_called;
 };
 
 static void getaddrinfo_do(struct getaddrinfo_req* req);
@@ -54,7 +54,8 @@ static void getaddrinfo_cb(uv_getaddrinfo_t* handle,
 static void fs_do(struct fs_req* req);
 static void fs_cb(uv_fs_t* handle);
 
-static volatile int thread_called;
+static int thread_called;
+static uv_key_t tls_key;
 
 
 static void getaddrinfo_do(struct getaddrinfo_req* req) {
@@ -104,34 +105,30 @@ static void fs_cb(uv_fs_t* handle) {
 
 
 static void do_work(void* arg) {
-  struct getaddrinfo_req getaddrinfo_reqs[16];
-  struct fs_req fs_reqs[16];
-  uv_loop_t* loop;
+  struct getaddrinfo_req getaddrinfo_reqs[4];
+  struct fs_req fs_reqs[4];
+  uv_loop_t loop;
   size_t i;
-  int r;
   struct test_thread* thread = arg;
 
-  loop = uv_loop_new();
-  ASSERT(loop != NULL);
+  ASSERT(0 == uv_loop_init(&loop));
 
   for (i = 0; i < ARRAY_SIZE(getaddrinfo_reqs); i++) {
     struct getaddrinfo_req* req = getaddrinfo_reqs + i;
-    req->counter = 16;
-    req->loop = loop;
+    req->counter = 4;
+    req->loop = &loop;
     getaddrinfo_do(req);
   }
 
   for (i = 0; i < ARRAY_SIZE(fs_reqs); i++) {
     struct fs_req* req = fs_reqs + i;
-    req->counter = 16;
-    req->loop = loop;
+    req->counter = 4;
+    req->loop = &loop;
     fs_do(req);
   }
 
-  r = uv_run(loop, UV_RUN_DEFAULT);
-  ASSERT(r == 0);
-
-  uv_loop_delete(loop);
+  ASSERT(0 == uv_run(&loop, UV_RUN_DEFAULT));
+  ASSERT(0 == uv_loop_close(&loop));
   thread->thread_called = 1;
 }
 
@@ -176,8 +173,60 @@ TEST_IMPL(threadpool_multiple_event_loops) {
   for (i = 0; i < ARRAY_SIZE(threads); i++) {
     r = uv_thread_join(&threads[i].thread_id);
     ASSERT(r == 0);
-    ASSERT(threads[i].thread_called);
+    ASSERT(threads[i].thread_called == 1);
   }
 
+  return 0;
+}
+
+
+static void tls_thread(void* arg) {
+  ASSERT(NULL == uv_key_get(&tls_key));
+  uv_key_set(&tls_key, arg);
+  ASSERT(arg == uv_key_get(&tls_key));
+  uv_key_set(&tls_key, NULL);
+  ASSERT(NULL == uv_key_get(&tls_key));
+}
+
+
+TEST_IMPL(thread_local_storage) {
+  char name[] = "main";
+  uv_thread_t threads[2];
+  ASSERT(0 == uv_key_create(&tls_key));
+  ASSERT(NULL == uv_key_get(&tls_key));
+  uv_key_set(&tls_key, name);
+  ASSERT(name == uv_key_get(&tls_key));
+  ASSERT(0 == uv_thread_create(threads + 0, tls_thread, threads + 0));
+  ASSERT(0 == uv_thread_create(threads + 1, tls_thread, threads + 1));
+  ASSERT(0 == uv_thread_join(threads + 0));
+  ASSERT(0 == uv_thread_join(threads + 1));
+  uv_key_delete(&tls_key);
+  return 0;
+}
+
+
+static void thread_check_stack(void* arg) {
+#if defined(__APPLE__)
+  /* 512 kB is the default stack size of threads other than the main thread
+   * on MacOS. */
+  ASSERT(pthread_get_stacksize_np(pthread_self()) > 512*1024);
+#elif defined(__linux__) && defined(__GLIBC__)
+  struct rlimit lim;
+  size_t stack_size;
+  pthread_attr_t attr;
+  ASSERT(0 == getrlimit(RLIMIT_STACK, &lim));
+  if (lim.rlim_cur == RLIM_INFINITY)
+    lim.rlim_cur = 2 << 20;  /* glibc default. */
+  ASSERT(0 == pthread_getattr_np(pthread_self(), &attr));
+  ASSERT(0 == pthread_attr_getstacksize(&attr, &stack_size));
+  ASSERT(stack_size >= lim.rlim_cur);
+#endif
+}
+
+
+TEST_IMPL(thread_stack_size) {
+  uv_thread_t thread;
+  ASSERT(0 == uv_thread_create(&thread, thread_check_stack, NULL));
+  ASSERT(0 == uv_thread_join(&thread));
   return 0;
 }

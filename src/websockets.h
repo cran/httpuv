@@ -6,7 +6,11 @@
 
 #include <string>
 #include <vector>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
+#include "utils.h"
+#include "thread.h"
 #include "constants.h"
 #include "websockets-base.h"
 
@@ -133,11 +137,17 @@ public:
   void read(const char* data, size_t len);
 };
 
-typedef uint8_t WSConnState;
-const WSConnState WS_OPEN = 0;
-const WSConnState WS_CLOSE_RECEIVED = 1;
-const WSConnState WS_CLOSE_SENT = 2;
-const WSConnState WS_CLOSE = WS_CLOSE_RECEIVED | WS_CLOSE_SENT;
+
+enum WSConnState {
+  WS_OPEN,
+  WS_CLOSE_RECEIVED,
+  WS_CLOSE_SENT,
+  // This can represent two cases:
+  //   1. When a close message is received, and a close message is sent.
+  //   2. When the connection was simply closed without any messages.
+  // It may be useful in the future to split this up.
+  WS_CLOSED
+};
 
 class WebSocketConnectionCallbacks {
 public:
@@ -152,7 +162,7 @@ public:
 
 class WebSocketConnection : WSParserCallbacks, NoCopy {
   WSConnState _connState;
-  WebSocketConnectionCallbacks* _pCallbacks;
+  boost::shared_ptr<WebSocketConnectionCallbacks> _pCallbacks;
   WSParser* _pParser;
   WSFrameHeaderInfo _incompleteContentHeader;
   WSFrameHeaderInfo _header;
@@ -160,11 +170,14 @@ class WebSocketConnection : WSParserCallbacks, NoCopy {
   std::vector<char> _payload;
 
 public:
-  WebSocketConnection(WebSocketConnectionCallbacks* callbacks)
-      : _connState(WS_OPEN), _pCallbacks(callbacks),
+  WebSocketConnection(boost::shared_ptr<WebSocketConnectionCallbacks> callbacks)
+      : _connState(WS_OPEN),
+        _pCallbacks(callbacks),
         _pParser(NULL) {
   }
   virtual ~WebSocketConnection() {
+    ASSERT_BACKGROUND_THREAD()
+    trace("WebSocketConnection::~WebSocketConnection");
     try {
       delete _pParser;
     } catch(...) {}
@@ -178,8 +191,10 @@ public:
                  std::vector<uint8_t>* pResponse);
 
   void sendWSMessage(Opcode opcode, const char* pData, size_t length);
-  void closeWS();
+  void closeWS(uint16_t code = 1000, std::string reason = "");
   void read(const char* data, size_t len);
+  void read(boost::shared_ptr<std::vector<char>> buf);
+  void markClosed();
 
 protected:
   void onHeaderComplete(const WSFrameHeaderInfo& header);
