@@ -1,9 +1,9 @@
-34ed5b9829e7ca1a47ccaf183eb4c77d *DESCRIPTION
+fccf490d1839339e1eba536c76feb062 *DESCRIPTION
 8ccdbeca5910ac0d4f75a9247c24be8b *LICENSE
 0ab9abb28282e40386482df53cb2c329 *NAMESPACE
-5eb7742cab83a896d971ea03bb988f76 *NEWS.md
+c792d222ea420eb0fee3b34b0c2931fa *NEWS.md
 20a4e92a6d8475682ffe189fd7196fae *R/RcppExports.R
-1f0dee1b478b8c070c477e3d33d9fe24 *R/httpuv.R
+eb93ce7777cca658896dac19ed7d9127 *R/httpuv.R
 95935c79fd17170aec9edf17742c0f89 *R/utils.R
 4dda3137f5e9ee3facff3b53d64c8899 *README.md
 a0f3e53431a9137cabdaac6ea19005a8 *demo/00Index
@@ -23,7 +23,7 @@ ff0fbfb3f27a2d6b12dade5eb2e1db1d *man/service.Rd
 a493c3075e6fc37a42c69ca088cc8104 *man/stopAllServers.Rd
 1f19b35236f74c0e037ca5da7de5a35b *man/stopDaemonizedServer.Rd
 bab106fe26ceeba4ce681ade7c780ebc *man/stopServer.Rd
-6613b4a2b34e5fa2f4c7f17a8459fe6c *src/Makevars
+4c02624fc21649c4a812919727a491e4 *src/Makevars
 cafa75f649d57f5fcd56b1589e6b304c *src/Makevars.win
 29112c7aca0789569ae0a0c4a3bf3282 *src/RcppExports-legacy.cpp
 6fc6a056b4f374990d8400127de57a99 *src/RcppExports.cpp
