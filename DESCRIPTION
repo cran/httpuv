@@ -1,7 +1,7 @@
 Package: httpuv
 Type: Package
 Title: HTTP and WebSocket Server Library
-Version: 1.4.2
+Version: 1.4.3
 Author: Joe Cheng, Hector Corrada Bravo [ctb], Jeroen Ooms [ctb],
     Winston Chang [ctb]
 Copyright: RStudio, Inc.; Joyent, Inc.; Nginx Inc.; Igor Sysoev; Niels
@@ -16,13 +16,13 @@ Description: Provides low-level socket and protocol support for handling
     http-parser license information.)
 License: GPL (>= 2) | file LICENSE
 Depends: R (>= 2.15.1), methods
-Imports: Rcpp (>= 0.11.0), utils, promises, later (>= 0.7.1)
+Imports: Rcpp (>= 0.11.0), utils, promises, later (>= 0.7.2)
 LinkingTo: Rcpp, BH, later
 URL: https://github.com/rstudio/httpuv
 SystemRequirements: GNU make
 RoxygenNote: 6.0.1.9000
 Suggests: testthat, callr
 NeedsCompilation: yes
-Packaged: 2018-05-03 15:29:00 UTC; winston
+Packaged: 2018-05-09 20:51:45 UTC; jcheng
 Repository: CRAN
-Date/Publication: 2018-05-03 22:43:06 UTC
+Date/Publication: 2018-05-10 13:55:00 UTC
