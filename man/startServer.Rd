@@ -3,6 +3,7 @@
 \name{startServer}
 \alias{startServer}
 \alias{startPipeServer}
+\alias{startPipeServer}
 \title{Create an HTTP/WebSocket server}
 \usage{
 startServer(host, port, app)
@@ -68,7 +69,8 @@ Creates an HTTP/WebSocket server on the specified host and port.
     \item{\code{call(req)}}{Process the given HTTP request, and return an 
     HTTP response. This method should be implemented in accordance with the
     \href{https://github.com/jeffreyhorner/Rook/blob/a5e45f751/README.md}{Rook}
-    specification.}
+    specification.} Note that httpuv augments \code{req} with an additional item,
+    \code{req$HEADERS}, which is a named character vector of request headers.
     \item{\code{onHeaders(req)}}{Optional. Similar to \code{call}, but occurs
     when headers are received. Return \code{NULL} to continue normal
     processing of the request, or a Rook response to send that response,
@@ -82,6 +84,26 @@ Creates an HTTP/WebSocket server on the specified host and port.
   The \code{startPipeServer} variant can be used instead of 
   \code{startServer} to listen on a Unix domain socket or named pipe rather
   than a TCP socket (this is not common).
+}
+\examples{
+\dontrun{
+# A very basic application
+handle <- startServer("0.0.0.0", 5000,
+  list(
+    call = function(req) {
+      list(
+        status = 200L,
+        headers = list(
+          'Content-Type' = 'text/html'
+        ),
+        body = "Hello world!"
+      )
+    }
+  )
+)
+
+stopServer(handle)
+}
 }
 \seealso{
 \code{\link{stopServer}}, \code{\link{runServer}}

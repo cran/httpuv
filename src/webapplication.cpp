@@ -5,8 +5,8 @@
 #include "httprequest.h"
 #include "http.h"
 #include "thread.h"
+#include "utils.h"
 #include <Rinternals.h>
-
 
 std::string normalizeHeaderName(const std::string& name) {
   std::string result = name;
@@ -128,11 +128,21 @@ void requestToEnv(boost::shared_ptr<HttpRequest> pRequest, Rcpp::Environment* pE
   env["REMOTE_PORT"] = CharacterVector(rportstr.str());
 
   const RequestHeaders& headers = pRequest->headers();
+  Rcpp::CharacterVector raw_headers(headers.size());
+  Rcpp::CharacterVector raw_header_names(headers.size());
+
   for (RequestHeaders::const_iterator it = headers.begin();
     it != headers.end();
     it++) {
+    int idx = std::distance(headers.begin(), it);
     env["HTTP_" + normalizeHeaderName(it->first)] = CharacterVector(it->second);
+    raw_header_names[idx] = to_lower(it->first);
+    raw_headers[idx] = it->second;
   }
+  raw_headers.attr("names") = raw_header_names;
+
+  env["HEADERS"] = raw_headers;
+
 }
 
 
@@ -234,7 +244,7 @@ void RWebApplication::onHeaders(boost::shared_ptr<HttpRequest> pRequest,
 }
 
 void RWebApplication::onBodyData(boost::shared_ptr<HttpRequest> pRequest,
-      boost::shared_ptr<std::vector<char>> data,
+      boost::shared_ptr<std::vector<char> > data,
       boost::function<void(boost::shared_ptr<HttpResponse>)> errorCallback)
 {
   ASSERT_MAIN_THREAD()
@@ -328,7 +338,7 @@ void RWebApplication::onWSOpen(boost::shared_ptr<HttpRequest> pRequest,
 
 void RWebApplication::onWSMessage(boost::shared_ptr<WebSocketConnection> pConn,
                                   bool binary,
-                                  boost::shared_ptr<std::vector<char>> data,
+                                  boost::shared_ptr<std::vector<char> > data,
                                   boost::function<void(void)> error_callback)
 {
   ASSERT_MAIN_THREAD()

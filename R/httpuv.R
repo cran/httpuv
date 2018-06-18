@@ -392,7 +392,8 @@ WebSocket <- setRefClass(
 #'     \item{\code{call(req)}}{Process the given HTTP request, and return an 
 #'     HTTP response. This method should be implemented in accordance with the
 #'     \href{https://github.com/jeffreyhorner/Rook/blob/a5e45f751/README.md}{Rook}
-#'     specification.}
+#'     specification.} Note that httpuv augments \code{req} with an additional item,
+#'     \code{req$HEADERS}, which is a named character vector of request headers.
 #'     \item{\code{onHeaders(req)}}{Optional. Similar to \code{call}, but occurs
 #'     when headers are received. Return \code{NULL} to continue normal
 #'     processing of the request, or a Rook response to send that response,
@@ -408,6 +409,26 @@ WebSocket <- setRefClass(
 #'   than a TCP socket (this is not common).
 #' @seealso \code{\link{stopServer}}, \code{\link{runServer}}
 #' @aliases startPipeServer
+#'
+#' @examples
+#' \dontrun{
+#' # A very basic application
+#' handle <- startServer("0.0.0.0", 5000,
+#'   list(
+#'     call = function(req) {
+#'       list(
+#'         status = 200L,
+#'         headers = list(
+#'           'Content-Type' = 'text/html'
+#'         ),
+#'         body = "Hello world!"
+#'       )
+#'     }
+#'   )
+#' )
+#'
+#' stopServer(handle)
+#' }
 #' @export
 startServer <- function(host, port, app) {
   
@@ -532,6 +553,24 @@ service <- function(timeoutMs = ifelse(interactive(), 100, 1000)) {
 #'   
 #' @seealso \code{\link{startServer}}, \code{\link{service}},
 #'   \code{\link{stopServer}}
+#'
+#' @examples
+#' \dontrun{
+#' # A very basic application
+#' runServer("0.0.0.0", 5000,
+#'   list(
+#'     call = function(req) {
+#'       list(
+#'         status = 200L,
+#'         headers = list(
+#'           'Content-Type' = 'text/html'
+#'         ),
+#'         body = "Hello world!"
+#'       )
+#'     }
+#'   )
+#' )
+#' }
 #' @export
 runServer <- function(host, port, app, interruptIntervalMs = NULL) {
   server <- startServer(host, port, app)

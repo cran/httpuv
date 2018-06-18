@@ -83,7 +83,9 @@ uv_async_t async_stop_io_loop;
 
 void close_handle_cb(uv_handle_t* handle, void* arg) {
   ASSERT_BACKGROUND_THREAD()
-  uv_close(handle, NULL);
+  if (!uv_is_closing(handle)) {
+    uv_close(handle, NULL);
+  }
 }
 
 void stop_io_loop(uv_async_t *handle) {
@@ -152,7 +154,7 @@ void sendWSMessage(SEXP conn,
   ASSERT_MAIN_THREAD()
   Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>,
              Rcpp::PreserveStorage,
-             auto_deleter_background<boost::shared_ptr<WebSocketConnection>>,
+             auto_deleter_background<boost::shared_ptr<WebSocketConnection> >,
              true> conn_xptr(conn);
   boost::shared_ptr<WebSocketConnection> wsc = internalize_shared_ptr(conn_xptr);
 
@@ -187,7 +189,7 @@ void sendWSMessage(SEXP conn,
   background_queue->push(cb);
   // Free str after data is written
   // deleter_background<std::vector<char>>(str)
-  background_queue->push(boost::bind(deleter_background<std::vector<char>>, str));
+  background_queue->push(boost::bind(deleter_background<std::vector<char> >, str));
 }
 
 // [[Rcpp::export]]
@@ -199,7 +201,7 @@ void closeWS(SEXP conn,
   trace("closeWS\n");
   Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>,
              Rcpp::PreserveStorage,
-             auto_deleter_background<boost::shared_ptr<WebSocketConnection>>,
+             auto_deleter_background<boost::shared_ptr<WebSocketConnection> >,
              true> conn_xptr(conn);
   boost::shared_ptr<WebSocketConnection> wsc = internalize_shared_ptr(conn_xptr);
 
@@ -599,6 +601,37 @@ std::vector<std::string> decodeURIComponent(std::vector<std::string> value) {
   return value;
 }
 
+//' Check whether an address is IPv4 or IPv6
+//'
+//' Given an IP address, this checks whether it is an IPv4 or IPv6 address.
+//'
+//' @param ip A single string representing an IP address.
+//'
+//' @return
+//' For IPv4 addresses, \code{4}; for IPv6 addresses, \code{6}. If the address is
+//' neither, \code{-1}.
+//'
+//' @examples
+//' ipFamily("127.0.0.1")   # 4
+//' ipFamily("500.0.0.500") # -1
+//' ipFamily("500.0.0.500") # -1
+//'
+//' ipFamily("::")          # 6
+//' ipFamily("::1")         # 6
+//' ipFamily("fe80::1ff:fe23:4567:890a") # 6
+//' @export
+// [[Rcpp::export]]
+int ipFamily(const std::string& ip) {
+  int family = ip_family(ip);
+  if (family == AF_INET6)
+    return 6;
+  else if (family == AF_INET)
+    return 4;
+  else
+    return -1;
+}
+
+
 // Given a List and an external pointer to a C++ function that takes a List,
 // invoke the function with the List as the single argument. This also clears
 // the external pointer so that the C++ function can't be called again.
@@ -643,7 +676,7 @@ void getRNGState() {
 //
 //[[Rcpp::export]]
 std::string wsconn_address(SEXP external_ptr) {
-  Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>> xptr(external_ptr);
+  Rcpp::XPtr<boost::shared_ptr<WebSocketConnection> > xptr(external_ptr);
   std::ostringstream os;
   os << std::hex << reinterpret_cast<uintptr_t>(xptr.get()->get());
   return os.str();
