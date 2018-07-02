@@ -1,7 +1,7 @@
-2d7dc1465961ddbfaef35e54b4125a18 *DESCRIPTION
+2adf25313ee582acf7beb4f18b073f02 *DESCRIPTION
 8ccdbeca5910ac0d4f75a9247c24be8b *LICENSE
 1abf38e678838b26fc57292c09482a77 *NAMESPACE
-a3d93c89d52091d4b5e2988ca7c483d1 *NEWS.md
+d1efbfc9213ffb89d41300be314b3b80 *NEWS.md
 c3212effdba935fec7a15c9babadaf71 *R/RcppExports.R
 0c49f9787307acbd6e77c2d635a8cebe *R/httpuv.R
 95935c79fd17170aec9edf17742c0f89 *R/utils.R
@@ -25,7 +25,7 @@ a493c3075e6fc37a42c69ca088cc8104 *man/stopAllServers.Rd
 1f19b35236f74c0e037ca5da7de5a35b *man/stopDaemonizedServer.Rd
 bab106fe26ceeba4ce681ade7c780ebc *man/stopServer.Rd
 f6c709e87603cd38ead497d200d25971 *src/Makevars
-81bd28053e98b1fe28202e074c0a18a8 *src/Makevars.win
+f6e955370064ac15f03783dd933f68c1 *src/Makevars.win
 29112c7aca0789569ae0a0c4a3bf3282 *src/RcppExports-legacy.cpp
 2112c5f8160de7b0a7b1e9bcc1139bc8 *src/RcppExports.cpp
 8c9195d6a7a7d0c4fa3fd39e750b27ca *src/auto_deleter.h
