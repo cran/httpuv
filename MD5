@@ -1,7 +1,7 @@
-2adf25313ee582acf7beb4f18b073f02 *DESCRIPTION
+cfb76374e26bb04d37f625eebcd76e02 *DESCRIPTION
 8ccdbeca5910ac0d4f75a9247c24be8b *LICENSE
 1abf38e678838b26fc57292c09482a77 *NAMESPACE
-d1efbfc9213ffb89d41300be314b3b80 *NEWS.md
+90148bbb391c7119b18e86d31acea6be *NEWS.md
 c3212effdba935fec7a15c9babadaf71 *R/RcppExports.R
 0c49f9787307acbd6e77c2d635a8cebe *R/httpuv.R
 95935c79fd17170aec9edf17742c0f89 *R/utils.R
@@ -53,8 +53,8 @@ f05f25fef0e90fa31d4b67cb045a7893 *src/http-parser/AUTHORS
 5939c95d6e6e032a90bb68cfd57d02e6 *src/http-parser/test.c
 8aa43e05587343a2b04528822f180717 *src/http.cpp
 eaa59939159bab819a28c5adf7da84c7 *src/http.h
-de3dbfb13c233bf1d53b64f7b5103ee8 *src/httprequest.cpp
-faab58d9d13124e56ca5340a4e1863e9 *src/httprequest.h
+7308739f39448d8362f07cfb8ed7fb84 *src/httprequest.cpp
+c5e118b6b16faf32007be72363ead1eb *src/httprequest.h
 57abe828da499cbe5447d63a318210a0 *src/httpresponse.cpp
 36db69a2b17568045c6b3622cf447b56 *src/httpresponse.h
 57fa6427c2d933e8ccdbf37e7d4f20ec *src/httpuv.cpp
