@@ -2,6 +2,7 @@
 #define HTTPRESPONSE_HPP
 
 #include "uvutil.h"
+#include "utils.h"
 #include "constants.h"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -16,20 +17,21 @@ class HttpResponse : public boost::enable_shared_from_this<HttpResponse>  {
   std::string _status;
   ResponseHeaders _headers;
   std::vector<char> _responseHeader;
-  DataSource* _pBody;
+  boost::shared_ptr<DataSource> _pBody;
   bool _closeAfterWritten;
 
 public:
   HttpResponse(boost::shared_ptr<HttpRequest> pRequest,
                int statusCode,
                const std::string& status,
-               DataSource* pBody)
+               boost::shared_ptr<DataSource> pBody)
     : _pRequest(pRequest),
       _statusCode(statusCode),
       _status(status),
       _pBody(pBody),
       _closeAfterWritten(false)
   {
+    _headers.push_back(std::make_pair("Date", http_date_string(time(NULL))));
   }
 
   ~HttpResponse();

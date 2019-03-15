@@ -17,6 +17,7 @@
 #include "thread.h"
 #include "httpuv.h"
 #include "auto_deleter.h"
+#include "socket.h"
 #include <Rinternals.h>
 
 
@@ -94,6 +95,20 @@ void stop_io_loop(uv_async_t *handle) {
   uv_stop(io_loop.get());
 }
 
+#ifndef _WIN32
+// Blocks SIGPIPE on the current thread.
+void block_sigpipe() {
+  sigset_t set;
+  int result;
+  sigemptyset(&set);
+  sigaddset(&set, SIGPIPE);
+  result = pthread_sigmask(SIG_BLOCK, &set, NULL);
+  if (result) {
+    err_printf("Error blocking SIGPIPE on httpuv background thread.\n");
+  }
+}
+#endif
+
 void io_thread(void* data) {
   register_background_thread();
   Barrier* blocker = reinterpret_cast<Barrier*>(data);
@@ -110,6 +125,11 @@ void io_thread(void* data) {
   // Tell other thread that it can continue.
   blocker->wait();
 
+  // Must ignore SIGPIPE for libuv code; otherwise unexpectedly closed
+  // connections kill us. https://github.com/rstudio/httpuv/issues/168
+#ifndef _WIN32
+  block_sigpipe();
+#endif
   // Run io_loop. When it stops, this fuction continues and the thread exits.
   uv_run(io_loop.get(), UV_RUN_DEFAULT);
 
@@ -213,6 +233,10 @@ void closeWS(SEXP conn,
 }
 
 
+// ============================================================================
+// Create/stop servers
+// ============================================================================
+
 // [[Rcpp::export]]
 Rcpp::RObject makeTcpServer(const std::string& host, int port,
                             Rcpp::Function onHeaders,
@@ -220,7 +244,9 @@ Rcpp::RObject makeTcpServer(const std::string& host, int port,
                             Rcpp::Function onRequest,
                             Rcpp::Function onWSOpen,
                             Rcpp::Function onWSMessage,
-                            Rcpp::Function onWSClose) {
+                            Rcpp::Function onWSClose,
+                            Rcpp::List     staticPaths,
+                            Rcpp::List     staticPathOptions) {
 
   using namespace Rcpp;
   register_main_thread();
@@ -229,7 +255,8 @@ Rcpp::RObject makeTcpServer(const std::string& host, int port,
   // this should be deleted when it goes out of scope.
   boost::shared_ptr<RWebApplication> pHandler(
     new RWebApplication(onHeaders, onBodyData, onRequest,
-                        onWSOpen, onWSMessage, onWSClose),
+                        onWSOpen, onWSMessage, onWSClose,
+                        staticPaths, staticPathOptions),
     auto_deleter_main<RWebApplication>
   );
 
@@ -273,7 +300,9 @@ Rcpp::RObject makePipeServer(const std::string& name,
                              Rcpp::Function onRequest,
                              Rcpp::Function onWSOpen,
                              Rcpp::Function onWSMessage,
-                             Rcpp::Function onWSClose) {
+                             Rcpp::Function onWSClose,
+                             Rcpp::List     staticPaths,
+                             Rcpp::List     staticPathOptions) {
 
   using namespace Rcpp;
   register_main_thread();
@@ -282,7 +311,8 @@ Rcpp::RObject makePipeServer(const std::string& name,
   // this should be deleted when it goes out of scope.
   boost::shared_ptr<RWebApplication> pHandler(
     new RWebApplication(onHeaders, onBodyData, onRequest,
-                        onWSOpen, onWSMessage, onWSClose),
+                        onWSOpen, onWSMessage, onWSClose,
+                        staticPaths, staticPathOptions),
     auto_deleter_main<RWebApplication>
   );
 
@@ -319,7 +349,7 @@ Rcpp::RObject makePipeServer(const std::string& name,
 }
 
 
-void stopServer(uv_stream_t* pServer) {
+void stopServer_(uv_stream_t* pServer) {
   ASSERT_MAIN_THREAD()
 
   // Remove it from the list of running servers.
@@ -339,53 +369,65 @@ void stopServer(uv_stream_t* pServer) {
   );
 }
 
-//' Stop a server
-//' 
-//' Given a handle that was returned from a previous invocation of 
-//' \code{\link{startServer}} or \code{\link{startPipeServer}}, this closes all
-//' open connections for that server and  unbinds the port.
-//' 
-//' @param handle A handle that was previously returned from
-//'   \code{\link{startServer}} or \code{\link{startPipeServer}}.
-//'
-//' @seealso \code{\link{stopAllServers}} to stop all servers.
-//'
-//' @export
 // [[Rcpp::export]]
-void stopServer(std::string handle) {
+void stopServer_(std::string handle) {
   ASSERT_MAIN_THREAD()
   uv_stream_t* pServer = internalize_str<uv_stream_t>(handle);
-  stopServer(pServer);
-}
-
-//' Stop all applications
-//'
-//' This will stop all applications which were created by
-//' \code{\link{startServer}} or \code{\link{startPipeServer}}.
-//'
-//' @seealso \code{\link{stopServer}} to stop a specific server.
-//'
-//' @export
-// [[Rcpp::export]]
-void stopAllServers() {
-  ASSERT_MAIN_THREAD()
-
-  if (!io_thread_running.get())
-    return;
-
-  // Each call to stopServer also removes it from the pServers list.
-  while (pServers.size() > 0) {
-    stopServer(pServers[0]);
-  }
-
-  uv_async_send(&async_stop_io_loop);
-
-  trace("io_thread stopped");
-  uv_thread_join(&io_thread_id);
+  stopServer_(pServer);
 }
 
 void stop_loop_timer_cb(uv_timer_t* handle) {
   uv_stop(handle->loop);
+}
+
+
+// ============================================================================
+// Static file serving
+// ============================================================================
+
+boost::shared_ptr<WebApplication> get_pWebApplication(uv_stream_t* pServer) {
+  // Copy the Socket shared_ptr
+  boost::shared_ptr<Socket> pSocket(*(boost::shared_ptr<Socket>*)pServer->data);
+  return pSocket->pWebApplication;
+}
+
+boost::shared_ptr<WebApplication> get_pWebApplication(std::string handle) {
+  uv_stream_t* pServer = internalize_str<uv_stream_t>(handle);
+  return get_pWebApplication(pServer);
+}
+
+// [[Rcpp::export]]
+Rcpp::List getStaticPaths_(std::string handle) {
+  ASSERT_MAIN_THREAD()
+  return get_pWebApplication(handle)->getStaticPathManager().pathsAsRObject();
+}
+
+// [[Rcpp::export]]
+Rcpp::List setStaticPaths_(std::string handle, Rcpp::List sp) {
+  ASSERT_MAIN_THREAD()
+  get_pWebApplication(handle)->getStaticPathManager().set(sp);
+  return getStaticPaths_(handle);
+}
+
+// [[Rcpp::export]]
+Rcpp::List removeStaticPaths_(std::string handle, Rcpp::CharacterVector paths) {
+  ASSERT_MAIN_THREAD()
+  get_pWebApplication(handle)->getStaticPathManager().remove(paths);
+  return getStaticPaths_(handle);
+}
+
+// [[Rcpp::export]]
+Rcpp::List getStaticPathOptions_(std::string handle) {
+  ASSERT_MAIN_THREAD()
+  return get_pWebApplication(handle)->getStaticPathManager().getOptions().asRObject();
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List setStaticPathOptions_(std::string handle, Rcpp::List opts) {
+  ASSERT_MAIN_THREAD()
+  get_pWebApplication(handle)->getStaticPathManager().setOptions(opts);
+  return getStaticPathOptions_(handle);
 }
 
 
@@ -448,7 +490,7 @@ std::string doEncodeURI(std::string value, bool encodeReserved) {
   for (std::string::const_iterator it = value.begin();
     it != value.end();
     it++) {
-    
+
     if (!needsEscape(*it, encodeReserved)) {
       os << *it;
     } else {
@@ -459,7 +501,7 @@ std::string doEncodeURI(std::string value, bool encodeReserved) {
 }
 
 //' URI encoding/decoding
-//' 
+//'
 //' Encodes/decodes strings using URI encoding/decoding in the same way that web
 //' browsers do. The precise behaviors of these functions can be found at
 //' developer.mozilla.org:
@@ -467,51 +509,52 @@ std::string doEncodeURI(std::string value, bool encodeReserved) {
 //' \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent}{encodeURIComponent},
 //' \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURI}{decodeURI},
 //' \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent}{decodeURIComponent}
-//' 
+//'
 //' Intended as a faster replacement for \code{\link[utils]{URLencode}} and
 //' \code{\link[utils]{URLdecode}}.
-//' 
+//'
 //' encodeURI differs from encodeURIComponent in that the former will not encode
 //' reserved characters: \code{;,/?:@@&=+$}
-//' 
+//'
 //' decodeURI differs from decodeURIComponent in that it will refuse to decode
 //' encoded sequences that decode to a reserved character. (If in doubt, use
 //' decodeURIComponent.)
-//' 
-//' The only way these functions differ from web browsers is in the encoding of
-//' non-ASCII characters. All non-ASCII characters will be escaped byte-by-byte.
-//' If conformant non-ASCII behavior is important, ensure that your input vector
-//' is UTF-8 encoded before calling encodeURI or encodeURIComponent.
-//' 
+//'
+//' For \code{encodeURI} and \code{encodeURIComponent}, input strings will be
+//' converted to UTF-8 before URL-encoding.
+//'
 //' @param value Character vector to be encoded or decoded.
 //' @return Encoded or decoded character vector of the same length as the
-//'   input value.
+//'   input value. \code{decodeURI} and \code{decodeURIComponent} will return
+//'   strings that are UTF-8 encoded.
 //'
 //' @export
 // [[Rcpp::export]]
-std::vector<std::string> encodeURI(std::vector<std::string> value) {
-  for (std::vector<std::string>::iterator it = value.begin();
-    it != value.end();
-    it++) {
+Rcpp::CharacterVector encodeURI(Rcpp::CharacterVector value) {
+  Rcpp::CharacterVector out(value.size(), NA_STRING);
 
-    *it = doEncodeURI(*it, false);
+  for (int i = 0; i < value.size(); i++) {
+    if (value[i] != NA_STRING) {
+      std::string encoded = doEncodeURI(Rf_translateCharUTF8(value[i]), false);
+      out[i] = Rf_mkCharCE(encoded.c_str(), CE_UTF8);
+    }
   }
-  
-  return value;
+  return out;
 }
 
 //' @rdname encodeURI
 //' @export
 // [[Rcpp::export]]
-std::vector<std::string> encodeURIComponent(std::vector<std::string> value) {
-  for (std::vector<std::string>::iterator it = value.begin();
-    it != value.end();
-    it++) {
+Rcpp::CharacterVector encodeURIComponent(Rcpp::CharacterVector value) {
+  Rcpp::CharacterVector out(value.size(), NA_STRING);
 
-    *it = doEncodeURI(*it, true);
+  for (int i = 0; i < value.size(); i++) {
+    if (value[i] != NA_STRING) {
+      std::string encoded = doEncodeURI(Rf_translateCharUTF8(value[i]), true);
+      out[i] = Rf_mkCharCE(encoded.c_str(), CE_UTF8);
+    }
   }
-  
-  return value;
+  return out;
 }
 
 int hexToInt(char c) {
@@ -541,14 +584,14 @@ std::string doDecodeURI(std::string value, bool component) {
   for (std::string::const_iterator it = value.begin();
     it != value.end();
     it++) {
-    
+
     // If there aren't enough characters left for this to be a
     // valid escape code, just use the character and move on
     if (it > value.end() - 3) {
       os << *it;
       continue;
     }
-    
+
     if (*it == '%') {
       char hi = *(++it);
       char lo = *(++it);
@@ -569,36 +612,41 @@ std::string doDecodeURI(std::string value, bool component) {
       os << *it;
     }
   }
-  
+
   return os.str();
 }
 
+
 //' @rdname encodeURI
 //' @export
 // [[Rcpp::export]]
-std::vector<std::string> decodeURI(std::vector<std::string> value) {
-  for (std::vector<std::string>::iterator it = value.begin();
-    it != value.end();
-    it++) {
+Rcpp::CharacterVector decodeURI(Rcpp::CharacterVector value) {
+  Rcpp::CharacterVector out(value.size(), NA_STRING);
 
-    *it = doDecodeURI(*it, false);
+  for (int i = 0; i < value.size(); i++) {
+    if (value[i] != NA_STRING) {
+      std::string decoded = doDecodeURI(Rcpp::as<std::string>(value[i]), false);
+      out[i] = Rf_mkCharLenCE(decoded.c_str(), decoded.length(), CE_UTF8);
+    }
   }
-  
-  return value;
+
+  return out;
 }
 
 //' @rdname encodeURI
 //' @export
 // [[Rcpp::export]]
-std::vector<std::string> decodeURIComponent(std::vector<std::string> value) {
-  for (std::vector<std::string>::iterator it = value.begin();
-    it != value.end();
-    it++) {
+Rcpp::CharacterVector decodeURIComponent(Rcpp::CharacterVector value) {
+  Rcpp::CharacterVector out(value.size(), NA_STRING);
 
-    *it = doDecodeURI(*it, true);
+  for (int i = 0; i < value.size(); i++) {
+    if (value[i] != NA_STRING) {
+      std::string decoded = doDecodeURI(Rcpp::as<std::string>(value[i]), true);
+      out[i] = Rf_mkCharLenCE(decoded.c_str(), decoded.length(), CE_UTF8);
+    }
   }
-  
-  return value;
+
+  return out;
 }
 
 //' Check whether an address is IPv4 or IPv6

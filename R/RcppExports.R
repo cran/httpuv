@@ -9,40 +9,36 @@ closeWS <- function(conn, code, reason) {
     invisible(.Call('_httpuv_closeWS', PACKAGE = 'httpuv', conn, code, reason))
 }
 
-makeTcpServer <- function(host, port, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose) {
-    .Call('_httpuv_makeTcpServer', PACKAGE = 'httpuv', host, port, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose)
+makeTcpServer <- function(host, port, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions) {
+    .Call('_httpuv_makeTcpServer', PACKAGE = 'httpuv', host, port, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions)
 }
 
-makePipeServer <- function(name, mask, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose) {
-    .Call('_httpuv_makePipeServer', PACKAGE = 'httpuv', name, mask, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose)
+makePipeServer <- function(name, mask, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions) {
+    .Call('_httpuv_makePipeServer', PACKAGE = 'httpuv', name, mask, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions)
 }
 
-#' Stop a server
-#' 
-#' Given a handle that was returned from a previous invocation of 
-#' \code{\link{startServer}} or \code{\link{startPipeServer}}, this closes all
-#' open connections for that server and  unbinds the port.
-#' 
-#' @param handle A handle that was previously returned from
-#'   \code{\link{startServer}} or \code{\link{startPipeServer}}.
-#'
-#' @seealso \code{\link{stopAllServers}} to stop all servers.
-#'
-#' @export
-stopServer <- function(handle) {
-    invisible(.Call('_httpuv_stopServer', PACKAGE = 'httpuv', handle))
+stopServer_ <- function(handle) {
+    invisible(.Call('_httpuv_stopServer_', PACKAGE = 'httpuv', handle))
 }
 
-#' Stop all applications
-#'
-#' This will stop all applications which were created by
-#' \code{\link{startServer}} or \code{\link{startPipeServer}}.
-#'
-#' @seealso \code{\link{stopServer}} to stop a specific server.
-#'
-#' @export
-stopAllServers <- function() {
-    invisible(.Call('_httpuv_stopAllServers', PACKAGE = 'httpuv'))
+getStaticPaths_ <- function(handle) {
+    .Call('_httpuv_getStaticPaths_', PACKAGE = 'httpuv', handle)
+}
+
+setStaticPaths_ <- function(handle, sp) {
+    .Call('_httpuv_setStaticPaths_', PACKAGE = 'httpuv', handle, sp)
+}
+
+removeStaticPaths_ <- function(handle, paths) {
+    .Call('_httpuv_removeStaticPaths_', PACKAGE = 'httpuv', handle, paths)
+}
+
+getStaticPathOptions_ <- function(handle) {
+    .Call('_httpuv_getStaticPathOptions_', PACKAGE = 'httpuv', handle)
+}
+
+setStaticPathOptions_ <- function(handle, opts) {
+    .Call('_httpuv_setStaticPathOptions_', PACKAGE = 'httpuv', handle, opts)
 }
 
 base64encode <- function(x) {
@@ -50,7 +46,7 @@ base64encode <- function(x) {
 }
 
 #' URI encoding/decoding
-#' 
+#'
 #' Encodes/decodes strings using URI encoding/decoding in the same way that web
 #' browsers do. The precise behaviors of these functions can be found at
 #' developer.mozilla.org:
@@ -58,25 +54,24 @@ base64encode <- function(x) {
 #' \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent}{encodeURIComponent},
 #' \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURI}{decodeURI},
 #' \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent}{decodeURIComponent}
-#' 
+#'
 #' Intended as a faster replacement for \code{\link[utils]{URLencode}} and
 #' \code{\link[utils]{URLdecode}}.
-#' 
+#'
 #' encodeURI differs from encodeURIComponent in that the former will not encode
 #' reserved characters: \code{;,/?:@@&=+$}
-#' 
+#'
 #' decodeURI differs from decodeURIComponent in that it will refuse to decode
 #' encoded sequences that decode to a reserved character. (If in doubt, use
 #' decodeURIComponent.)
-#' 
-#' The only way these functions differ from web browsers is in the encoding of
-#' non-ASCII characters. All non-ASCII characters will be escaped byte-by-byte.
-#' If conformant non-ASCII behavior is important, ensure that your input vector
-#' is UTF-8 encoded before calling encodeURI or encodeURIComponent.
-#' 
+#'
+#' For \code{encodeURI} and \code{encodeURIComponent}, input strings will be
+#' converted to UTF-8 before URL-encoding.
+#'
 #' @param value Character vector to be encoded or decoded.
 #' @return Encoded or decoded character vector of the same length as the
-#'   input value.
+#'   input value. \code{decodeURI} and \code{decodeURIComponent} will return
+#'   strings that are UTF-8 encoded.
 #'
 #' @export
 encodeURI <- function(value) {

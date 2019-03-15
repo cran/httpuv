@@ -1,4 +1,6 @@
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include "httpuv.h"
 #include "filedatasource.h"
 #include "webapplication.h"
@@ -6,7 +8,14 @@
 #include "http.h"
 #include "thread.h"
 #include "utils.h"
+#include "mime.h"
+#include "staticpath.h"
+#include "fs.h"
 #include <Rinternals.h>
+
+// ============================================================================
+// Utility functions
+// ============================================================================
 
 std::string normalizeHeaderName(const std::string& name) {
   std::string result = name;
@@ -87,13 +96,26 @@ Rcpp::List errorResponse() {
   );
 }
 
-void requestToEnv(boost::shared_ptr<HttpRequest> pRequest, Rcpp::Environment* pEnv) {
-  ASSERT_MAIN_THREAD()
-  using namespace Rcpp;
+// An analog to errorResponse, but this returns an shared_ptr<HttpResponse>
+// instead of an Rcpp::List, doesn't involve any R objects, and can be run on
+// the background thread.
+boost::shared_ptr<HttpResponse> error_response(boost::shared_ptr<HttpRequest> pRequest, int code) {
+  std::string description = getStatusDescription(code);
+  std::string content = toString(code) + " " + description + "\n";
 
-  Environment& env = *pEnv;
+  std::vector<uint8_t> responseData(content.begin(), content.end());
 
-  std::string url = pRequest->url();
+  // Freed in on_response_written
+  boost::shared_ptr<DataSource> pDataSource = boost::make_shared<InMemoryDataSource>(responseData);
+
+  return boost::shared_ptr<HttpResponse>(
+    new HttpResponse(pRequest, code, description, pDataSource),
+    auto_deleter_background<HttpResponse>
+  );
+}
+
+// Given a URL path like "/foo?abc=123", removes the '?' and everything after.
+std::pair<std::string, std::string> splitQueryString(const std::string& url) {
   size_t qsIndex = url.find('?');
   std::string path, queryString;
   if (qsIndex == std::string::npos)
@@ -102,6 +124,20 @@ void requestToEnv(boost::shared_ptr<HttpRequest> pRequest, Rcpp::Environment* pE
     path = url.substr(0, qsIndex);
     queryString = url.substr(qsIndex);
   }
+
+  return std::pair<std::string, std::string>(path, queryString);
+}
+
+
+void requestToEnv(boost::shared_ptr<HttpRequest> pRequest, Rcpp::Environment* pEnv) {
+  ASSERT_MAIN_THREAD()
+  using namespace Rcpp;
+
+  Environment& env = *pEnv;
+
+  std::pair<std::string, std::string> url_query = splitQueryString(pRequest->url());
+  std::string& path        = url_query.first;
+  std::string& queryString = url_query.second;
 
   // When making assignments into the Environment, the value must be wrapped
   // in a Rcpp object -- letting Rcpp automatically do the wrapping can result
@@ -166,24 +202,30 @@ boost::shared_ptr<HttpResponse> listToResponse(
   List responseHeaders = response["headers"];
 
   // Self-frees when response is written
-  DataSource* pDataSource = NULL;
+  boost::shared_ptr<DataSource> pDataSource(nullptr);
 
   // The response can either contain:
   // - bodyFile: String value that names the file that should be streamed
   // - body: Character vector (which is charToRaw-ed) or raw vector, or NULL
   if (std::find(names.begin(), names.end(), "bodyFile") != names.end()) {
-    FileDataSource* pFDS = new FileDataSource();
-    pFDS->initialize(Rcpp::as<std::string>(response["bodyFile"]),
-        Rcpp::as<bool>(response["bodyFileOwned"]));
+    boost::shared_ptr<FileDataSource> pFDS = boost::make_shared<FileDataSource>();
+    FileDataSourceResult ret = pFDS->initialize(
+      Rcpp::as<std::string>(response["bodyFile"]),
+      Rcpp::as<bool>(response["bodyFileOwned"])
+    );
+    if (ret != FDS_OK) {
+      REprintf(pFDS->lastErrorMessage().c_str());
+      return error_response(pRequest, 500);
+    }
     pDataSource = pFDS;
   }
   else if (Rf_isString(response["body"])) {
     RawVector responseBytes = Function("charToRaw")(response["body"]);
-    pDataSource = new InMemoryDataSource(responseBytes);
+    pDataSource = boost::make_shared<InMemoryDataSource>(responseBytes);
   }
   else {
     RawVector responseBytes = response["body"];
-    pDataSource = new InMemoryDataSource(responseBytes);
+    pDataSource = boost::make_shared<InMemoryDataSource>(responseBytes);
   }
 
   boost::shared_ptr<HttpResponse> pResp(
@@ -209,6 +251,28 @@ void invokeResponseFun(boost::function<void(boost::shared_ptr<HttpResponse>)> fu
   // HttpResponse->writeResponse().
   boost::shared_ptr<HttpResponse> pResponse = listToResponse(pRequest, response);
   fun(pResponse);
+}
+
+
+// ============================================================================
+// Methods
+// ============================================================================
+
+RWebApplication::RWebApplication(
+    Rcpp::Function onHeaders,
+    Rcpp::Function onBodyData,
+    Rcpp::Function onRequest,
+    Rcpp::Function onWSOpen,
+    Rcpp::Function onWSMessage,
+    Rcpp::Function onWSClose,
+    Rcpp::List     staticPaths,
+    Rcpp::List     staticPathOptions) :
+    _onHeaders(onHeaders), _onBodyData(onBodyData), _onRequest(onRequest),
+    _onWSOpen(onWSOpen), _onWSMessage(onWSMessage), _onWSClose(onWSClose)
+{
+  ASSERT_MAIN_THREAD()
+
+  _staticPathManager = StaticPathManager(staticPaths, staticPathOptions);
 }
 
 
@@ -363,4 +427,199 @@ void RWebApplication::onWSMessage(boost::shared_ptr<WebSocketConnection> pConn,
 void RWebApplication::onWSClose(boost::shared_ptr<WebSocketConnection> pConn) {
   ASSERT_MAIN_THREAD()
   _onWSClose(externalize_shared_ptr(pConn));
+}
+
+
+// ============================================================================
+// Static file serving
+// ============================================================================
+//
+// Unlike most of the methods for an RWebApplication, these ones are called on
+// the background thread.
+
+boost::shared_ptr<HttpResponse> RWebApplication::staticFileResponse(
+  boost::shared_ptr<HttpRequest> pRequest
+) {
+  ASSERT_BACKGROUND_THREAD()
+
+  // If it has a Connection: Upgrade header, don't try to serve a static file.
+  // Just fall through, even if the path is one that is in the
+  // StaticPathManager.
+  if (pRequest->hasHeader("Connection", "Upgrade", true)) {
+    return nullptr;
+  }
+
+  // Strip off query string
+  std::pair<std::string, std::string> url_query = splitQueryString(pRequest->url());
+  std::string url_path = doDecodeURI(url_query.first, true);
+
+  boost::optional<std::pair<StaticPath, std::string>> sp_pair =
+    _staticPathManager.matchStaticPath(url_path);
+
+  if (!sp_pair) {
+    // This was not a static path. Fall through to the R code to handle this
+    // path.
+    return nullptr;
+  }
+
+  // If we get here, we've matched a static path.
+
+  const StaticPath&  sp      = sp_pair->first;
+  // Note that the subpath may include leading dirs, as in "foo/bar/abc.txt".
+  const std::string& subpath = sp_pair->second;
+
+  // This is an excluded path
+  if (sp.options.exclude.get()) {
+    return nullptr;
+  }
+
+  // Validate headers (if validation pattern was provided).
+  if (!sp.options.validateRequestHeaders(pRequest->headers())) {
+    return error_response(pRequest, 403);
+  }
+
+  // Check that method is GET or HEAD; error otherwise.
+  std::string method = pRequest->method();
+  if (method != "GET" && method != "HEAD") {
+    return error_response(pRequest, 400);
+  }
+
+  // Make sure that there's no message body.
+  if (pRequest->hasHeader("Content-Length") || pRequest->hasHeader("Transfer-Encoding")) {
+    return error_response(pRequest, 400);
+  }
+
+  // Disallow ".." in paths. (Browsers collapse them anyway, so no normal
+  // requests should contain them.) The ones we care about will always be
+  // between two slashes, as in "/foo/../bar", except in the case where it's
+  // at the end of the URL, as in "/foo/..". Paths like "/foo../" or "/..foo/"
+  // are OK.
+  if (url_path.find("/../") != std::string::npos ||
+      (url_path.length() >= 3 && url_path.substr(url_path.length()-3, 3) == "/..")
+  ) {
+    if (sp.options.fallthrough.get()) {
+      return nullptr;
+    } else {
+      return error_response(pRequest, 400);
+    }
+  }
+
+  // Path to local file on disk
+  std::string local_path = sp.path;
+  if (subpath != "") {
+    local_path += "/" + subpath;
+  }
+
+  if (is_directory(local_path)) {
+    if (sp.options.indexhtml.get()) {
+      local_path = local_path + "/" + "index.html";
+    }
+  }
+
+  boost::shared_ptr<FileDataSource> pDataSource = boost::make_shared<FileDataSource>();
+  FileDataSourceResult ret = pDataSource->initialize(local_path, false);
+
+  if (ret != FDS_OK) {
+    if (ret == FDS_NOT_EXIST || ret == FDS_ISDIR) {
+      if (sp.options.fallthrough.get()) {
+        return nullptr;
+      } else {
+        return error_response(pRequest, 404);
+      }
+    } else {
+      return error_response(pRequest, 500);
+    }
+  }
+
+  // Use local_path instead of subpath, because if the subpath is "/foo/" and
+  // *(sp.options.indexhtml) is true, then the local_path will be
+  // "/foo/index.html". We need to use the latter to determine mime type.
+  std::string content_type = find_mime_type(find_extension(basename(local_path)));
+  if (content_type == "") {
+    content_type = "application/octet-stream";
+  } else if (content_type == "text/html") {
+    // Add the encoding if specified by the options.
+    if (sp.options.html_charset.get() != "") {
+      content_type = "text/html; charset=" + sp.options.html_charset.get();
+    }
+  }
+
+  // Check if the client has an up-to-date copy of the file in cache. To do
+  // this, compare the If-Modified-Since header to the file's mtime.
+  bool client_cache_is_valid = false;
+  if (pRequest->hasHeader("If-Modified-Since")) {
+    time_t file_mtime = pDataSource->getMtime();
+    time_t if_mod_since = parse_http_date_string(pRequest->getHeader("If-Modified-Since"));
+
+    if (file_mtime != 0 && if_mod_since != 0 && file_mtime <= if_mod_since) {
+      client_cache_is_valid = true;
+    }
+  }
+
+  // ==================================
+  // Create the HTTP response
+  // ==================================
+
+  // Default status code at this point is 200.
+  int status_code = 200;
+
+  // This is the pointer that will be passed to the new HttpResponse. We'll
+  // start by setting it to point to the same thing as pDataSource, but it can
+  // be unset based on various conditions, which means that no body data will
+  // be sent.
+  boost::shared_ptr<FileDataSource> pDataSource2 = pDataSource;
+
+  if (method == "HEAD") {
+    pDataSource2.reset();
+  }
+
+  if (client_cache_is_valid) {
+    pDataSource2.reset();
+    status_code = 304;
+  }
+
+  boost::shared_ptr<HttpResponse> pResponse = boost::shared_ptr<HttpResponse>(
+    new HttpResponse(pRequest, status_code, getStatusDescription(status_code), pDataSource2),
+    auto_deleter_background<HttpResponse>
+  );
+
+  ResponseHeaders& respHeaders = pResponse->headers();
+
+  // Add extra user-specified headers.
+  const ResponseHeaders& extraRespHeaders = sp.options.headers.get();
+  if (extraRespHeaders.size() != 0) {
+    ResponseHeaders::const_iterator it;
+    for (it = extraRespHeaders.begin(); it != extraRespHeaders.end(); it++) {
+      if (status_code == 304) {
+        // For a 304 response, only a few headers should be added. See
+        // https://tools.ietf.org/html/rfc7232#section-4.1
+        // (Date is automatically added in the HttpResponse.)
+        if (it->first == "Cache-Control" || it->first == "Content-Location" ||
+            it->first == "ETag" || it->first == "Expires" || it->first == "Vary")
+        {
+          respHeaders.push_back(*it);
+        }
+
+      } else {
+        // For a normal 200 response, add all headers.
+        respHeaders.push_back(*it);
+      }
+    }
+  }
+
+  if (status_code != 304) {
+    // Set the Content-Length here so that both GET and HEAD requests will get
+    // it. If we didn't set it here, the response for the GET would
+    // automatically set the Content-Length (by using the FileDataSource), but
+    // the response for the HEAD would not.
+    respHeaders.push_back(std::make_pair("Content-Length", toString(pDataSource->size())));
+    respHeaders.push_back(std::make_pair("Content-Type", content_type));
+    respHeaders.push_back(std::make_pair("Last-Modified", http_date_string(pDataSource->getMtime())));
+  }
+
+  return pResponse;
+}
+
+StaticPathManager& RWebApplication::getStaticPathManager() {
+  return _staticPathManager;
 }

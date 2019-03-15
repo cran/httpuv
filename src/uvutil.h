@@ -4,14 +4,9 @@
 #include "thread.h"
 #include <string>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include "libuv/include/uv.h"
 
-/* Prevent naming conflicts for Free() and Calloc() */
-#define R_NO_REMAP
-// This could be defined from Makevars.win. In that case, don't re-define it.
-#ifndef STRICT_R_HEADERS
-#define STRICT_R_HEADERS
-#endif
 #include <Rcpp.h>
 
 inline uv_handle_t* toHandle(uv_timer_t* timer) {
@@ -56,7 +51,10 @@ public:
     std::copy(rawVector.begin(), rawVector.end(), _buffer.begin());
   }
 
-  virtual ~InMemoryDataSource() {}
+  virtual ~InMemoryDataSource() {
+    close();
+  }
+
   uint64_t size() const;
   uv_buf_t getData(size_t bytesDesired);
   void freeData(uv_buf_t buffer);
@@ -72,10 +70,10 @@ class ExtendedWrite {
   int _activeWrites;
   bool _errored;
   uv_stream_t* _pHandle;
-  DataSource* _pDataSource;
+  boost::shared_ptr<DataSource> _pDataSource;
 
 public:
-  ExtendedWrite(uv_stream_t* pHandle, DataSource* pDataSource)
+  ExtendedWrite(uv_stream_t* pHandle, boost::shared_ptr<DataSource> pDataSource)
       : _activeWrites(0), _errored(false), _pHandle(pHandle),
         _pDataSource(pDataSource) {}
   virtual ~ExtendedWrite() {}

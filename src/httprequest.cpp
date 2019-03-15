@@ -31,14 +31,14 @@ void on_alloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
 }
 
 // Does a header field `name` exist?
-bool HttpRequest::_hasHeader(const std::string& name) const {
+bool HttpRequest::hasHeader(const std::string& name) const {
   return _headers.find(name) != _headers.end();
 }
 
 // Does a header field `name` exist and have a particular value? If ci is
 // true, do a case-insensitive comparison of the value (fields are always
 // case- insensitive.)
-bool HttpRequest::_hasHeader(const std::string& name, const std::string& value, bool ci) const {
+bool HttpRequest::hasHeader(const std::string& name, const std::string& value, bool ci) const {
   RequestHeaders::const_iterator item = _headers.find(name);
   if (item == _headers.end())
     return false;
@@ -48,6 +48,16 @@ bool HttpRequest::_hasHeader(const std::string& name, const std::string& value, 
   } else {
     return item->second == value;
   }
+}
+
+// Return the value of a specified header. If the specified header isn't
+// found, return "".
+std::string HttpRequest::getHeader(const std::string& name) const {
+  RequestHeaders::const_iterator item = _headers.find(name);
+  if (item == _headers.end())
+    return "";
+
+  return item->second;
 }
 
 uv_stream_t* HttpRequest::handle() {
@@ -288,6 +298,23 @@ int HttpRequest::_on_headers_complete(http_parser* pParser) {
   trace("HttpRequest::_on_headers_complete");
   updateUpgradeStatus();
 
+  // Attempt static serving here. If the request is for a static path, this
+  // will be a response object; if not, it will be nullptr.
+  boost::shared_ptr<HttpResponse> pResponse =
+    _pWebApplication->staticFileResponse(shared_from_this());
+
+  if (pResponse) {
+    // The request was for a static path. Skip over the webapplication code
+    // (which calls back into R on the main thread). Just add a call to
+    // _on_headers_complete_complete to the queue on the background thread.
+    boost::function<void (void)> cb(
+      boost::bind(&HttpRequest::_on_headers_complete_complete, shared_from_this(), pResponse)
+    );
+    _background_queue->push(cb);
+    return 0;
+  }
+
+
   boost::function<void(boost::shared_ptr<HttpResponse>)> schedule_bg_callback(
     boost::bind(&HttpRequest::_schedule_on_headers_complete_complete, shared_from_this(), _1)
   );
@@ -333,7 +360,7 @@ void HttpRequest::_on_headers_complete_complete(boost::shared_ptr<HttpResponse> 
   int result = 0;
 
   if (pResponse) {
-    bool bodyExpected = _hasHeader("Content-Length") || _hasHeader("Transfer-Encoding");
+    bool bodyExpected = hasHeader("Content-Length") || hasHeader("Transfer-Encoding");
     bool shouldKeepAlive = http_should_keep_alive(&_parser);
 
     // There are two reasons we might want to send a message and close:
@@ -363,9 +390,10 @@ void HttpRequest::_on_headers_complete_complete(boost::shared_ptr<HttpResponse> 
   else {
     // If the request is Expect: Continue, and the app didn't say otherwise,
     // then give it what it wants
-    if (_hasHeader("Expect", "100-continue")) {
+    if (hasHeader("Expect", "100-continue")) {
       pResponse = boost::shared_ptr<HttpResponse>(
-        new HttpResponse(shared_from_this(), 100, "Continue", (DataSource*)NULL),
+        new HttpResponse(shared_from_this(), 100, "Continue",
+                         boost::shared_ptr<DataSource>(nullptr)),
         auto_deleter_background<HttpResponse>
       );
       pResponse->writeResponse();
@@ -748,7 +776,7 @@ void HttpRequest::_parse_http_data(char* buffer, const ssize_t n) {
 
     if (p_wsc->accept(_headers, pData, pDataLen)) {
       // Freed in on_response_written
-      InMemoryDataSource* pDS = new InMemoryDataSource();
+      boost::shared_ptr<InMemoryDataSource>pDS = boost::make_shared<InMemoryDataSource>();
       boost::shared_ptr<HttpResponse> pResp(
         new HttpResponse(shared_from_this(), 101, "Switching Protocols", pDS),
         auto_deleter_background<HttpResponse>
