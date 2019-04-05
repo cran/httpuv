@@ -1,7 +1,7 @@
 Package: httpuv
 Type: Package
 Title: HTTP and WebSocket Server Library
-Version: 1.5.0
+Version: 1.5.1
 Author: Joe Cheng, Hector Corrada Bravo [ctb], Jeroen Ooms [ctb],
     Winston Chang [ctb]
 Copyright: RStudio, Inc.; Joyent, Inc.; Nginx Inc.; Igor Sysoev; Niels
@@ -25,6 +25,6 @@ Suggests: testthat, callr, curl
 Collate: 'RcppExports.R' 'httpuv.R' 'server.R' 'static_paths.R'
         'utils.R'
 NeedsCompilation: yes
-Packaged: 2019-03-15 20:27:18 UTC; winston
+Packaged: 2019-04-05 20:06:25 UTC; winston
 Repository: CRAN
-Date/Publication: 2019-03-15 21:00:03 UTC
+Date/Publication: 2019-04-05 22:10:03 UTC
