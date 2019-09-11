@@ -30,8 +30,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // makeTcpServer
-Rcpp::RObject makeTcpServer(const std::string& host, int port, Rcpp::Function onHeaders, Rcpp::Function onBodyData, Rcpp::Function onRequest, Rcpp::Function onWSOpen, Rcpp::Function onWSMessage, Rcpp::Function onWSClose, Rcpp::List staticPaths, Rcpp::List staticPathOptions);
-RcppExport SEXP _httpuv_makeTcpServer(SEXP hostSEXP, SEXP portSEXP, SEXP onHeadersSEXP, SEXP onBodyDataSEXP, SEXP onRequestSEXP, SEXP onWSOpenSEXP, SEXP onWSMessageSEXP, SEXP onWSCloseSEXP, SEXP staticPathsSEXP, SEXP staticPathOptionsSEXP) {
+Rcpp::RObject makeTcpServer(const std::string& host, int port, Rcpp::Function onHeaders, Rcpp::Function onBodyData, Rcpp::Function onRequest, Rcpp::Function onWSOpen, Rcpp::Function onWSMessage, Rcpp::Function onWSClose, Rcpp::List staticPaths, Rcpp::List staticPathOptions, bool quiet);
+RcppExport SEXP _httpuv_makeTcpServer(SEXP hostSEXP, SEXP portSEXP, SEXP onHeadersSEXP, SEXP onBodyDataSEXP, SEXP onRequestSEXP, SEXP onWSOpenSEXP, SEXP onWSMessageSEXP, SEXP onWSCloseSEXP, SEXP staticPathsSEXP, SEXP staticPathOptionsSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -45,13 +45,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Function >::type onWSClose(onWSCloseSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type staticPaths(staticPathsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type staticPathOptions(staticPathOptionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(makeTcpServer(host, port, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(makeTcpServer(host, port, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
 // makePipeServer
-Rcpp::RObject makePipeServer(const std::string& name, int mask, Rcpp::Function onHeaders, Rcpp::Function onBodyData, Rcpp::Function onRequest, Rcpp::Function onWSOpen, Rcpp::Function onWSMessage, Rcpp::Function onWSClose, Rcpp::List staticPaths, Rcpp::List staticPathOptions);
-RcppExport SEXP _httpuv_makePipeServer(SEXP nameSEXP, SEXP maskSEXP, SEXP onHeadersSEXP, SEXP onBodyDataSEXP, SEXP onRequestSEXP, SEXP onWSOpenSEXP, SEXP onWSMessageSEXP, SEXP onWSCloseSEXP, SEXP staticPathsSEXP, SEXP staticPathOptionsSEXP) {
+Rcpp::RObject makePipeServer(const std::string& name, int mask, Rcpp::Function onHeaders, Rcpp::Function onBodyData, Rcpp::Function onRequest, Rcpp::Function onWSOpen, Rcpp::Function onWSMessage, Rcpp::Function onWSClose, Rcpp::List staticPaths, Rcpp::List staticPathOptions, bool quiet);
+RcppExport SEXP _httpuv_makePipeServer(SEXP nameSEXP, SEXP maskSEXP, SEXP onHeadersSEXP, SEXP onBodyDataSEXP, SEXP onRequestSEXP, SEXP onWSOpenSEXP, SEXP onWSMessageSEXP, SEXP onWSCloseSEXP, SEXP staticPathsSEXP, SEXP staticPathOptionsSEXP, SEXP quietSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -65,7 +66,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Function >::type onWSClose(onWSCloseSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type staticPaths(staticPathsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type staticPathOptions(staticPathOptionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(makePipeServer(name, mask, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions));
+    Rcpp::traits::input_parameter< bool >::type quiet(quietSEXP);
+    rcpp_result_gen = Rcpp::wrap(makePipeServer(name, mask, onHeaders, onBodyData, onRequest, onWSOpen, onWSMessage, onWSClose, staticPaths, staticPathOptions, quiet));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -234,14 +236,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_level
+std::string log_level(const std::string& level);
+RcppExport SEXP _httpuv_log_level(SEXP levelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type level(levelSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_level(level));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 RcppExport SEXP httpuv_decodeURIComponent(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"_httpuv_sendWSMessage", (DL_FUNC) &_httpuv_sendWSMessage, 3},
     {"_httpuv_closeWS", (DL_FUNC) &_httpuv_closeWS, 3},
-    {"_httpuv_makeTcpServer", (DL_FUNC) &_httpuv_makeTcpServer, 10},
-    {"_httpuv_makePipeServer", (DL_FUNC) &_httpuv_makePipeServer, 10},
+    {"_httpuv_makeTcpServer", (DL_FUNC) &_httpuv_makeTcpServer, 11},
+    {"_httpuv_makePipeServer", (DL_FUNC) &_httpuv_makePipeServer, 11},
     {"_httpuv_stopServer_", (DL_FUNC) &_httpuv_stopServer_, 1},
     {"_httpuv_getStaticPaths_", (DL_FUNC) &_httpuv_getStaticPaths_, 1},
     {"_httpuv_setStaticPaths_", (DL_FUNC) &_httpuv_setStaticPaths_, 2},
@@ -257,7 +270,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_httpuv_invokeCppCallback", (DL_FUNC) &_httpuv_invokeCppCallback, 2},
     {"_httpuv_getRNGState", (DL_FUNC) &_httpuv_getRNGState, 0},
     {"_httpuv_wsconn_address", (DL_FUNC) &_httpuv_wsconn_address, 1},
-    {"httpuv_decodeURIComponent",     (DL_FUNC) &httpuv_decodeURIComponent,      1},
+    {"_httpuv_log_level", (DL_FUNC) &_httpuv_log_level, 1},
+    {"httpuv_decodeURIComponent", (DL_FUNC) &httpuv_decodeURIComponent, 1},
     {NULL, NULL, 0}
 };
 

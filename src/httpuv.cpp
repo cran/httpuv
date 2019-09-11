@@ -93,7 +93,7 @@ void close_handle_cb(uv_handle_t* handle, void* arg) {
 
 void stop_io_loop(uv_async_t *handle) {
   ASSERT_BACKGROUND_THREAD()
-  trace("stop_io_loop");
+  debug_log("stop_io_loop", LOG_DEBUG);
   uv_stop(io_loop.get());
 }
 
@@ -135,7 +135,7 @@ void io_thread(void* data) {
   // Run io_loop. When it stops, this fuction continues and the thread exits.
   uv_run(io_loop.get(), UV_RUN_DEFAULT);
 
-  trace("io_loop stopped");
+  debug_log("io_loop stopped", LOG_DEBUG);
 
   // Cleanup stuff
   uv_walk(io_loop.get(), close_handle_cb, NULL);
@@ -220,7 +220,7 @@ void closeWS(SEXP conn,
              std::string reason)
 {
   ASSERT_MAIN_THREAD()
-  trace("closeWS\n");
+  debug_log("closeWS", LOG_DEBUG);
   Rcpp::XPtr<boost::shared_ptr<WebSocketConnection>,
              Rcpp::PreserveStorage,
              auto_deleter_background<boost::shared_ptr<WebSocketConnection> >,
@@ -248,7 +248,9 @@ Rcpp::RObject makeTcpServer(const std::string& host, int port,
                             Rcpp::Function onWSMessage,
                             Rcpp::Function onWSClose,
                             Rcpp::List     staticPaths,
-                            Rcpp::List     staticPathOptions) {
+                            Rcpp::List     staticPathOptions,
+                            bool           quiet
+) {
 
   using namespace Rcpp;
   register_main_thread();
@@ -280,7 +282,7 @@ Rcpp::RObject makeTcpServer(const std::string& host, int port,
     boost::bind(createTcpServerSync,
       io_loop.get(), host.c_str(), port,
       boost::static_pointer_cast<WebApplication>(pHandler),
-      background_queue, &pServer, blocker
+      quiet, background_queue, &pServer, blocker
     )
   );
 
@@ -306,7 +308,9 @@ Rcpp::RObject makePipeServer(const std::string& name,
                              Rcpp::Function onWSMessage,
                              Rcpp::Function onWSClose,
                              Rcpp::List     staticPaths,
-                             Rcpp::List     staticPathOptions) {
+                             Rcpp::List     staticPathOptions,
+                             bool           quiet
+) {
 
   using namespace Rcpp;
   register_main_thread();
@@ -336,7 +340,7 @@ Rcpp::RObject makePipeServer(const std::string& name,
     boost::bind(createPipeServerSync,
       io_loop.get(), name.c_str(), mask,
       boost::static_pointer_cast<WebApplication>(pHandler),
-      background_queue, &pServer, blocker
+      quiet, background_queue, &pServer, blocker
     )
   );
 

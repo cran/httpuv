@@ -6,7 +6,7 @@ subdir_index_file_content <- raw_file_content(test_path("apps/content/subdir/ind
 index_file_1_content <- raw_file_content(test_path("apps/content_1/index.html"))
 
 test_that("Basic static file serving", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       staticPaths = list(
         # Testing out various leading and trailing slashes
@@ -87,7 +87,7 @@ test_that("Basic static file serving", {
 
 
 test_that("Missing file fallthrough", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         return(list(
@@ -117,7 +117,7 @@ test_that("Missing file fallthrough", {
 
 
 test_that("Longer paths override shorter ones", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       staticPaths = list(
         # Testing out various leading and trailing slashes
@@ -159,7 +159,7 @@ test_that("Longer paths override shorter ones", {
 
 
 test_that("Options and option inheritance", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         return(list(
@@ -230,7 +230,7 @@ test_that("Options and option inheritance", {
 
 
 test_that("Excluding subpaths", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         # Return a 403 for the R code path; the C++ code path will return 404
@@ -311,7 +311,7 @@ test_that("Excluding subpaths", {
 })
 
 test_that("Header validation", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         if (!identical(req$HTTP_TEST_VALIDATION, "aaa")) {
@@ -397,7 +397,7 @@ test_that("Header validation", {
 
 
 test_that("Dynamically changing paths", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         list(
@@ -454,7 +454,7 @@ test_that("Dynamically changing paths", {
 
 
 test_that("Dynamically changing options", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         list(
@@ -516,7 +516,7 @@ test_that("Escaped characters in paths", {
   on.exit(unlink(static_dir, recursive = TRUE))
 
 
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         list(
@@ -539,7 +539,7 @@ test_that("Escaped characters in paths", {
 
 
 test_that("Paths with ..", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         list(
@@ -587,11 +587,54 @@ test_that("Paths with ..", {
   res <- http_request_con("GET /static/foo../", "127.0.0.1", s$getPort())
   expect_identical(res[1], "HTTP/1.1 404 Not Found")
   expect_false(any(grepl("^Test-Code-Path: R$", res, ignore.case = TRUE)))
+
+
 })
 
+test_that("Paths with backslash", {
+  s <- startServer("127.0.0.1", randomPort(),
+    list(
+      call = function(req) {
+        list(
+          status = 400,
+          headers = list("Test-Code-Path" = "R"),
+          body = "400 Bad Request\n"
+        )
+      },
+      staticPaths = list(
+        "/static" = test_path("apps/content")
+      )
+    )
+  )
+  on.exit(s$stop())
+
+  # Need to use http_request_con() instead of fetch() to send custom requests
+  # with "..".
+  # When a backslash is in path, should fall through to R code path.
+
+  # Raw backslash
+  res <- http_request_con("GET /static\\index.html", "127.0.0.1", s$getPort())
+  expect_identical(res[1], "HTTP/1.1 400 Bad Request")
+  expect_true(any(grepl("^Test-Code-Path: R$", res, ignore.case = TRUE)))
+
+  # Escaped backslash
+  res <- http_request_con("GET /static%5cindex.html", "127.0.0.1", s$getPort())
+  expect_identical(res[1], "HTTP/1.1 400 Bad Request")
+  expect_true(any(grepl("^Test-Code-Path: R$", res, ignore.case = TRUE)))
+
+  # Raw backslash with ..
+  res <- http_request_con("GET /static/..\\index.html", "127.0.0.1", s$getPort())
+  expect_identical(res[1], "HTTP/1.1 400 Bad Request")
+  expect_true(any(grepl("^Test-Code-Path: R$", res, ignore.case = TRUE)))
+
+  # Escaped backslash with ..
+  res <- http_request_con("GET /static/..%5cindex.html", "127.0.0.1", s$getPort())
+  expect_identical(res[1], "HTTP/1.1 400 Bad Request")
+  expect_true(any(grepl("^Test-Code-Path: R$", res, ignore.case = TRUE)))
+})
 
 test_that("HEAD, POST, PUT requests", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       call = function(req) {
         list(
@@ -634,7 +677,7 @@ test_that("HEAD, POST, PUT requests", {
 
 
 test_that("Last-Modified and If-Modified-Since headers", {
-  s <- startServer("127.0.0.1", random_open_port(),
+  s <- startServer("127.0.0.1", randomPort(),
     list(
       staticPaths = list(
         "/" = staticPath(
@@ -718,4 +761,43 @@ test_that("Last-Modified and If-Modified-Since headers", {
     )
   )
   expect_identical(r1$status_code, 200L)
+})
+
+
+test_that("Paths with non-ASCII characters", {
+  # "apps/fü", in UTF-8 encoding.
+  nonascii_path <- test_path("apps/f\U00FC")
+  dir.create(nonascii_path)
+  on.exit(unlink(nonascii_path, recursive = TRUE))
+
+  index_file_path <- file.path(nonascii_path, "index.html")
+  writeLines("Hello world!", index_file_path)
+  file_content <- raw_file_content(index_file_path)
+
+  s <- startServer("0.0.0.0", randomPort(),
+    list(
+      call = function(req) {
+        list(
+          status = 200L,
+          headers = list('Content-Type' = 'text/html'),
+          body = "R code path"
+        )
+      },
+      staticPaths = list(
+        "/f\U00FC" = nonascii_path,
+        "/foo" = nonascii_path
+      )
+    )
+  )
+  on.exit(s$stop(), add = TRUE)
+
+  # URL-encoded non-ASCII URL path, which maps to non-ASCII local path.
+  r <- fetch(local_url("/f%C3%BC", s$getPort()))
+  expect_identical(r$status_code, 200L)
+  expect_identical(r$content, file_content)
+
+  # ASCII URL path, which maps to non-ASCII local path.
+  r <- fetch(local_url("/foo", s$getPort()))
+  expect_identical(r$status_code, 200L)
+  expect_identical(r$content, file_content)
 })

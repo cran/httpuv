@@ -292,10 +292,10 @@ void RWebApplication::onHeaders(boost::shared_ptr<HttpRequest> pRequest,
   try {
     response = _onHeaders(pRequest->env());
   } catch (Rcpp::internal::InterruptedException &e) {
-    trace("Interrupt occurred in _onHeaders");
+    debug_log("Interrupt occurred in _onHeaders", LOG_INFO);
     response = errorResponse();
   } catch (...) {
-    trace("Exception occurred in _onHeaders");
+    debug_log("Exception occurred in _onHeaders", LOG_INFO);
     response = errorResponse();
   }
 
@@ -311,7 +311,7 @@ void RWebApplication::onBodyData(boost::shared_ptr<HttpRequest> pRequest,
       boost::function<void(boost::shared_ptr<HttpResponse>)> errorCallback)
 {
   ASSERT_MAIN_THREAD()
-  trace("RWebApplication::onBodyData");
+  debug_log("RWebApplication::onBodyData", LOG_DEBUG);
 
   // We're in an error state, but the background thread has already scheduled
   // more data to be processed here. Don't process more data.
@@ -323,7 +323,7 @@ void RWebApplication::onBodyData(boost::shared_ptr<HttpRequest> pRequest,
   try {
     _onBodyData(pRequest->env(), rawVector);
   } catch (...) {
-    trace("Exception occurred in _onBodyData");
+    debug_log("Exception occurred in _onBodyData", LOG_INFO);
     // Send an error message to the client. It's very possible that getResponse() or more
     // calls to onBodyData() will have been scheduled on the main thread
     // before the errorCallback is called.
@@ -338,7 +338,7 @@ void RWebApplication::onBodyData(boost::shared_ptr<HttpRequest> pRequest,
 void RWebApplication::getResponse(boost::shared_ptr<HttpRequest> pRequest,
                                   boost::function<void(boost::shared_ptr<HttpResponse>)> callback) {
   ASSERT_MAIN_THREAD()
-  trace("RWebApplication::getResponse");
+  debug_log("RWebApplication::getResponse", LOG_DEBUG);
   using namespace Rcpp;
 
   // Pass callback to R:
@@ -369,10 +369,10 @@ void RWebApplication::getResponse(boost::shared_ptr<HttpRequest> pRequest,
       // it and deal with it.
 
     } catch (Rcpp::internal::InterruptedException &e) {
-      trace("Interrupt occurred in _onRequest");
+      debug_log("Interrupt occurred in _onRequest", LOG_INFO);
       invokeCppCallback(errorResponse(), callback_xptr);
     } catch (...) {
-      trace("Exception occurred in _onRequest");
+      debug_log("Exception occurred in _onRequest", LOG_INFO);
       invokeCppCallback(errorResponse(), callback_xptr);
     }
   }
@@ -441,10 +441,9 @@ boost::shared_ptr<HttpResponse> RWebApplication::staticFileResponse(
 ) {
   ASSERT_BACKGROUND_THREAD()
 
-  // If it has a Connection: Upgrade header, don't try to serve a static file.
-  // Just fall through, even if the path is one that is in the
-  // StaticPathManager.
-  if (pRequest->hasHeader("Connection", "Upgrade", true)) {
+  // If there's any Upgrade header, don't try to serve a static file. Just
+  // fall through, even if the path is one that is in the StaticPathManager.
+  if (pRequest->hasHeader("Upgrade")) {
     return boost::shared_ptr<HttpResponse>();
   }
 

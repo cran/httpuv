@@ -158,7 +158,8 @@ void WSHyBiParser::createFrameHeaderFooter(
 
 void WSHyBiParser::read(const char* data, size_t len) {
   ASSERT_BACKGROUND_THREAD()
-  while (len > 0) {
+  bool recur = false;
+  while (len > 0 || recur) {
     // crude check for underflow
     assert(len < 1000000000000000000);
 
@@ -179,6 +180,9 @@ void WSHyBiParser::read(const char* data, size_t len) {
           size_t payloadOffset = frame.headerLength() - startingSize;
           _bytesLeft = frame.payloadLength();
 
+          // Header was consumed, but no payload
+          if (_bytesLeft == 0) recur = true;
+
           _state = InPayload;
           _header.clear();
 
@@ -193,6 +197,8 @@ void WSHyBiParser::read(const char* data, size_t len) {
         break;
       }
       case InPayload: {
+        recur = false;
+
         size_t bytesToConsume = min((uint64_t)len, _bytesLeft);
         _bytesLeft -= bytesToConsume;
         _pCallbacks->onPayload(data, bytesToConsume);
@@ -270,7 +276,7 @@ void WebSocketConnection::sendWSMessage(Opcode opcode, const char* pData, size_t
 
 void WebSocketConnection::closeWS(uint16_t code, std::string reason) {
   ASSERT_BACKGROUND_THREAD()
-  trace("WebSocketConnection::closeWS");
+  debug_log("WebSocketConnection::closeWS", LOG_DEBUG);
 
   switch (_connState) {
   // If we have already sent a close message, do nothing.
@@ -341,7 +347,7 @@ void WebSocketConnection::onPayload(const char* data, size_t len) {
 }
 void WebSocketConnection::onFrameComplete() {
   ASSERT_BACKGROUND_THREAD()
-  trace("WebSocketConnection::onFrameComplete");
+  debug_log("WebSocketConnection::onFrameComplete", LOG_DEBUG);
   if (_connState == WS_CLOSED) return;
 
   if (!_header.fin) {
@@ -370,7 +376,7 @@ void WebSocketConnection::onFrameComplete() {
         } else if (_connState == WS_CLOSE_SENT) {
           _connState = WS_CLOSED;
         }
-        
+
         // If we haven't sent a Close frame before, send one now, echoing
         // the callback
         if (_connState != WS_CLOSE_SENT && _connState != WS_CLOSED) {
