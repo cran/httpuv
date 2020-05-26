@@ -1,3 +1,4 @@
+#include <cstring>
 #include "websockets-base.h"
 
 bool isBigEndian() {
@@ -29,32 +30,34 @@ void WebSocketProto::createFrameHeader(
 
   unsigned char* pBuf = (unsigned char*)pData;
   unsigned char* pMaskingKey = pBuf + 2;
+  // Need to copy from a 64-bit chunk of memory, but size_t may be smaller.
+  uint64_t payloadSize_64 = payloadSize;
 
   pBuf[0] =
     toFin(true) << 7 | // FIN; always true
     encodeOpcode(opcode);
   pBuf[1] = mask ? 1 << 7 : 0;
-  if (payloadSize <= 125) {
-    pBuf[1] |= payloadSize;
+  if (payloadSize_64 <= 125) {
+    pBuf[1] |= payloadSize_64;
     pMaskingKey = pBuf + 2;
   }
-  else if (payloadSize <= 65535) {// 2^16-1
+  else if (payloadSize_64 <= 65535) {// 2^16-1
     pBuf[1] |= 126;
-    *((uint16_t*)&pBuf[2]) = (uint16_t)payloadSize;
+    memcpy(pBuf + 2, &payloadSize_64, sizeof(uint16_t));
     if (!isBigEndian())
       swapByteOrder(pBuf + 2, pBuf + 4);
     pMaskingKey = pBuf + 4;
   }
   else {
     pBuf[1] |= 127;
-    *((uint64_t*)&pBuf[2]) = (uint64_t)payloadSize;
+    memcpy(pBuf + 2, &payloadSize_64, sizeof(uint64_t));
     if (!isBigEndian())
       swapByteOrder(pBuf + 2, pBuf + 10);
     pMaskingKey = pBuf + 10;
   }
 
   if (mask) {
-    *((int32_t*)pMaskingKey) = maskingKey;
+    memcpy(pMaskingKey, &maskingKey, sizeof(int32_t));
   }
 
   *pLen = (pMaskingKey - pBuf) + (mask ? 4 : 0);
