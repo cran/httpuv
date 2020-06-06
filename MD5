@@ -1,14 +1,14 @@
-f3fee3a32b9178381cc232ccf3b6f03f *DESCRIPTION
+db8883b1b72589db220507cf70270c6c *DESCRIPTION
 8ccdbeca5910ac0d4f75a9247c24be8b *LICENSE
 f1b82aad12e8332811e70c4b87a39cfe *NAMESPACE
-67e050700ba3eb9433de3426a7ca4f23 *NEWS.md
+e78467ca9e3b167ef53548cad946126e *NEWS.md
 6bdd414fc86223e6f40efc191d4344fe *R/RcppExports.R
 39aad70a56ff4bbcea84f8e678fc58b1 *R/httpuv.R
 838e761ae4242a9e21b0f40509bb7db3 *R/random_port.R
 a9a0636bbbaad17dd96fc689a75e411a *R/server.R
 03b2ea160e76b5c09a439cdc5dbb9f32 *R/static_paths.R
 858752e9c2f5d66fe7c7a1719a2ff799 *R/utils.R
-3750370e76a941a8a1c3dc7ca51d6143 *README.md
+bc73046bd297f0b887a00dc4580dc591 *README.md
 a0f3e53431a9137cabdaac6ea19005a8 *demo/00Index
 671e18e7e592833ecf6f0fbc182265db *demo/daemon-echo.R
 a7cbd020c872fec211806ac7c1255737 *demo/echo.R
@@ -36,7 +36,7 @@ c7808fa18eedb89a54bad98cd50c11d3 *man/staticPathOptions.Rd
 ce0295e06430001432f1d804cc20a561 *man/stopDaemonizedServer.Rd
 2531673200a9ff50ea9ff1c8da8eb160 *man/stopServer.Rd
 84653f542bcccc6ac13acafdaac76dcc *src/Makevars
-fe7217a2568a7e16efdac3d8c9f75e9c *src/Makevars.win
+d9ca06578ced4e7c669dd3941abe6b6a *src/Makevars.win
 44ec85f7b261368818f1c7224aba1982 *src/RcppExports-legacy.cpp
 9c4bc4cdc59860801852159cde8bcccc *src/RcppExports.cpp
 c80da6781ec3d2f8f22cd1312e1d5569 *src/auto_deleter.h
@@ -65,8 +65,8 @@ f05f25fef0e90fa31d4b67cb045a7893 *src/http-parser/AUTHORS
 5939c95d6e6e032a90bb68cfd57d02e6 *src/http-parser/test.c
 b183ce68ef7338383d18213ffe3dbf83 *src/http.cpp
 ce74d0581a970ceabd3d9fedd132465d *src/http.h
-66981b460b80ce753e8eab0fe6696d07 *src/httprequest.cpp
-e9c4aeb12bcf769cd2306949788b43eb *src/httprequest.h
+d82572bd89f21c6f328e36d9ce65b626 *src/httprequest.cpp
+674da634d6b03ea4c201d2aae807c3e7 *src/httprequest.h
 361781df427df6b5937c194a9548c6d0 *src/httpresponse.cpp
 c5d828064924efa4c9bf15c1a17a39d0 *src/httpresponse.h
 307a90c359a0066a6c26fac3057475c1 *src/httpuv.cpp
@@ -80,7 +80,7 @@ eacc0b19e3fb8dd12d2e110b24be0452 *src/libuv/LICENSE-docs
 ed80d347a1efad1593d13d52b1d77d56 *src/libuv/MAINTAINERS.md
 bcda6038be1fe77b4b1a6aa7df248ef1 *src/libuv/Makefile-libuv.mingw
 b852b7a94972e6aff27f1183afffd17c *src/libuv/Makefile.am
-ebd0e2796dbff3ab8be6181d02267835 *src/libuv/Makefile.in
+437b41883115a503171c4687f856040c *src/libuv/Makefile.in
 7d20b2aab6f59aa7c444adfeb23bdd0b *src/libuv/README.md
 20b327c589c609558d1d23a5e0ce2e59 *src/libuv/SUPPORTED_PLATFORMS.md
 04ab422833448776ff35d5d86ae1ba15 *src/libuv/aclocal.m4
@@ -550,7 +550,8 @@ eba29c87173db8bf74ff073169b4bf51 *tests/testthat/helper-app.R
 5d31b4e076b09fe02128a05e431535f8 *tests/testthat/sample_app.R
 f9f57f01c9d3282e5c9cc4f83f528333 *tests/testthat/test-app.R
 87097296287f34495b3950560ddbc22c *tests/testthat/test-frame-completion.R
-21ab39e9982bbba3486af3ecf5c6b537 *tests/testthat/test-static-paths.R
+bb5aed04d316f54b6a30d27c1fea84db *tests/testthat/test-http-parse.R
+e07f577a5417f740a6e7c70d23ae5895 *tests/testthat/test-static-paths.R
 55abca5640ecb10b07896f8e23b205f5 *tests/testthat/test-traffic.R
 cdfb9c4459780b8da1913e5f55e66866 *tests/testthat/test-utils.R
 bcda6038be1fe77b4b1a6aa7df248ef1 *tools/Makefile-libuv.mingw
