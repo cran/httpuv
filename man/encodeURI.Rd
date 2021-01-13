@@ -20,8 +20,8 @@ decodeURIComponent(value)
 }
 \value{
 Encoded or decoded character vector of the same length as the
-  input value. \code{decodeURI} and \code{decodeURIComponent} will return
-  strings that are UTF-8 encoded.
+input value. \code{decodeURI} and \code{decodeURIComponent} will return
+strings that are UTF-8 encoded.
 }
 \description{
 Encodes/decodes strings using URI encoding/decoding in the same way that web
@@ -33,8 +33,8 @@ developer.mozilla.org:
 \href{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent}{decodeURIComponent}
 }
 \details{
-Intended as a faster replacement for \code{\link[utils]{URLencode}} and
-\code{\link[utils]{URLdecode}}.
+Intended as a faster replacement for \code{\link[utils:URLencode]{utils::URLencode()}} and
+\code{\link[utils:URLencode]{utils::URLdecode()}}.
 
 encodeURI differs from encodeURIComponent in that the former will not encode
 reserved characters: \code{;,/?:@&=+$}
