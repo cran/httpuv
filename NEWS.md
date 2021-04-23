@@ -1,3 +1,8 @@
+httpuv 1.6.0
+=================
+
+* Remove BH dependency. httpuv now requires a compiler which supports C++11. (#297)
+
 httpuv 1.5.5
 =================
 
