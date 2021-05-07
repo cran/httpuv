@@ -1,10 +1,15 @@
+httpuv 1.6.1
+============
+
+* The `timegm()` function is a non-standard GNU extension, so it has been replaced with an internal `timegm2()` function. (#300)
+
 httpuv 1.6.0
-=================
+============
 
 * Remove BH dependency. httpuv now requires a compiler which supports C++11. (#297)
 
 httpuv 1.5.5
-=================
+============
 
 * Fix SHA1 calculation, and thus WebSocket server handshakes, on big-endian systems. (#284)
 

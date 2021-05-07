@@ -2,7 +2,7 @@ Package: httpuv
 Type: Package
 Encoding: UTF-8
 Title: HTTP and WebSocket Server Library
-Version: 1.6.0
+Version: 1.6.1
 Authors@R: c(
     person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
     person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
@@ -38,7 +38,7 @@ Suggests: testthat, callr, curl, websocket
 Collate: 'RcppExports.R' 'httpuv.R' 'random_port.R' 'server.R'
         'static_paths.R' 'utils.R'
 NeedsCompilation: yes
-Packaged: 2021-04-23 17:53:30 UTC; winston
+Packaged: 2021-05-06 23:41:39 UTC; winston
 Author: Joe Cheng [aut],
   Winston Chang [aut, cre],
   RStudio, PBC [cph],
@@ -47,4 +47,4 @@ Author: Joe Cheng [aut],
   Andrzej Krzemienski [cph] (optional.hpp)
 Maintainer: Winston Chang <winston@rstudio.com>
 Repository: CRAN
-Date/Publication: 2021-04-23 18:50:02 UTC
+Date/Publication: 2021-05-07 04:50:02 UTC
