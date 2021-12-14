@@ -1,14 +1,14 @@
-1f5bb7a97ff02ca6cd1c9d4704830a17 *DESCRIPTION
+83288f972ea98a8283158c7ba86b0869 *DESCRIPTION
 0aaf41158b857283dfd639e6a3cbbd1c *LICENSE
 f1b82aad12e8332811e70c4b87a39cfe *NAMESPACE
-bec963b9049b98a24af323da40ef0415 *NEWS.md
+9f3e3bc4192b2442b6e89eedfded4a0b *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
 812186a9eb66f6e33d2566f8b61530b8 *R/httpuv.R
 838e761ae4242a9e21b0f40509bb7db3 *R/random_port.R
 a9a0636bbbaad17dd96fc689a75e411a *R/server.R
 03b2ea160e76b5c09a439cdc5dbb9f32 *R/static_paths.R
 73c947c78bb5194937ad564161fe97e4 *R/utils.R
-051e5fdf8e5d91f86d42ebb6fb3d0e46 *README.md
+9a99d141764251946a0bda8f9c2a8703 *README.md
 a0f3e53431a9137cabdaac6ea19005a8 *demo/00Index
 671e18e7e592833ecf6f0fbc182265db *demo/daemon-echo.R
 a7cbd020c872fec211806ac7c1255737 *demo/echo.R
@@ -35,7 +35,7 @@ ee1935e6c7313e30c55aaaed9b1e36bc *man/startServer.Rd
 0f5374567af47ea1c4302ca714b653fd *man/stopAllServers.Rd
 ce0295e06430001432f1d804cc20a561 *man/stopDaemonizedServer.Rd
 2531673200a9ff50ea9ff1c8da8eb160 *man/stopServer.Rd
-84653f542bcccc6ac13acafdaac76dcc *src/Makevars
+a7817248a7fc563ecc8c624e60cbd7bc *src/Makevars
 54f9e90d5b9b657409acd26a71cc2f5b *src/Makevars.win
 44ec85f7b261368818f1c7224aba1982 *src/RcppExports-legacy.cpp
 486b4fda21dd437d5b4d7a2e38a35b88 *src/RcppExports.cpp
