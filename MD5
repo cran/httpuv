@@ -1,7 +1,7 @@
-81706ed27bcb7f0398ea69502cfd2e3e *DESCRIPTION
+31222765ecce89acd4a829bfab95d41d *DESCRIPTION
 0aaf41158b857283dfd639e6a3cbbd1c *LICENSE
 f1b82aad12e8332811e70c4b87a39cfe *NAMESPACE
-509844ea507b35950011cb2a0cc21f6f *NEWS.md
+7ca0db5b6b853ba30746e431803d4b98 *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
 f5f0f0c12bcd3687824f30526f9d98f1 *R/httpuv.R
 838e761ae4242a9e21b0f40509bb7db3 *R/random_port.R
@@ -543,8 +543,8 @@ de778229cb9aece447fa53d8c2dcd30f *src/socket.cpp
 47648bce30e86032fe8394449ea46607 *src/staticpath.h
 d04738abce67c042f3e50a3f3d25a073 *src/thread.cpp
 0690597fbe98aea886d4c8fae084fac2 *src/thread.h
-c82d86b635e55e779bf07988ce2dcdba *src/timegm.cpp
-019c42bd1be7be1e0f38f066060eda85 *src/timegm.h
+960b25623bfe67005e97dcae8f8d709f *src/timegm.cpp
+6a576786c42686f03abc81a0152816dc *src/timegm.h
 108c47bc29ce736bd7db1485e0fc9f02 *src/tqueue.h
 500257d8ac24992f398eaf9b41e5918d *src/utils.cpp
 36abe5790071d6cfc4da284f4dc14881 *src/utils.h
