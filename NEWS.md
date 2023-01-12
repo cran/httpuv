@@ -1,3 +1,8 @@
+# httpuv 1.6.8
+
+* Fixed #351: A race condition could cause httpuv to crash when starting the background thread for I/O. (#352)
+
+
 # httpuv 1.6.7
 
 * Fixed rstudio/shiny#3741: The `TZ` environment variable could get unset in some cases. (#346)
