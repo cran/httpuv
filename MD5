@@ -1,7 +1,7 @@
-55f97b9f52ce5af8a8e697efd462af5f *DESCRIPTION
+a77b8e49b4b44de99e4dd3d6222dd383 *DESCRIPTION
 0aaf41158b857283dfd639e6a3cbbd1c *LICENSE
 f1b82aad12e8332811e70c4b87a39cfe *NAMESPACE
-10244a4ca6b481a5cd60fff31dc96ed2 *NEWS.md
+f6f06b020ad77d34315dc02f642c0362 *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
 f5f0f0c12bcd3687824f30526f9d98f1 *R/httpuv.R
 838e761ae4242a9e21b0f40509bb7db3 *R/random_port.R
@@ -35,9 +35,9 @@ ee1935e6c7313e30c55aaaed9b1e36bc *man/startServer.Rd
 0f5374567af47ea1c4302ca714b653fd *man/stopAllServers.Rd
 ce0295e06430001432f1d804cc20a561 *man/stopDaemonizedServer.Rd
 2531673200a9ff50ea9ff1c8da8eb160 *man/stopServer.Rd
-53dd0e59851efa43ceac1a5f62436167 *src/Makevars
-2b15d8d7862546d8ad9b08d957f15bfc *src/Makevars.ucrt
-54f9e90d5b9b657409acd26a71cc2f5b *src/Makevars.win
+55e5b8efc3ec99dbcdce18d1a3c38398 *src/Makevars
+f61c79b1cbaa33adc4357dab2bea8bff *src/Makevars.ucrt
+4c534871dccf23c28a0102849db940bb *src/Makevars.win
 44ec85f7b261368818f1c7224aba1982 *src/RcppExports-legacy.cpp
 486b4fda21dd437d5b4d7a2e38a35b88 *src/RcppExports.cpp
 995168981245f1ad0f04cdb17ee06544 *src/auto_deleter.h
@@ -68,7 +68,7 @@ f05f25fef0e90fa31d4b67cb045a7893 *src/http-parser/AUTHORS
 5939c95d6e6e032a90bb68cfd57d02e6 *src/http-parser/test.c
 c2e2ba4b3e30945df55f48c466003696 *src/http.cpp
 5da9e9f35bb1c36c7291b834fd9ca5d0 *src/http.h
-eea4c36744ce5c206f2d76c0331ea67d *src/httprequest.cpp
+3e4a15d0fd8253600f732001c43decaa *src/httprequest.cpp
 ef00d676a65c8b0529e5108d023daa6b *src/httprequest.h
 9e93b622a3773977e484068933756b66 *src/httpresponse.cpp
 0d10eff13bfd086ef11d8455779605da *src/httpresponse.h

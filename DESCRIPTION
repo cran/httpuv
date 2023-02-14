@@ -2,7 +2,7 @@ Package: httpuv
 Type: Package
 Encoding: UTF-8
 Title: HTTP and WebSocket Server Library
-Version: 1.6.8
+Version: 1.6.9
 Authors@R: c(
     person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
     person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
@@ -32,13 +32,13 @@ Depends: R (>= 2.15.1)
 Imports: Rcpp (>= 1.0.7), utils, R6, promises, later (>= 0.8.0)
 LinkingTo: Rcpp, later
 URL: https://github.com/rstudio/httpuv
-SystemRequirements: GNU make, C++11, zlib
+SystemRequirements: GNU make, zlib
 RoxygenNote: 7.2.3
 Suggests: testthat, callr, curl, websocket
 Collate: 'RcppExports.R' 'httpuv.R' 'random_port.R' 'server.R'
         'static_paths.R' 'utils.R'
 NeedsCompilation: yes
-Packaged: 2023-01-12 18:22:08 UTC; winston
+Packaged: 2023-02-08 20:09:18 UTC; winston
 Author: Joe Cheng [aut],
   Winston Chang [aut, cre],
   RStudio, PBC [cph],
@@ -47,4 +47,4 @@ Author: Joe Cheng [aut],
   Andrzej Krzemienski [cph] (optional.hpp)
 Maintainer: Winston Chang <winston@rstudio.com>
 Repository: CRAN
-Date/Publication: 2023-01-12 18:50:02 UTC
+Date/Publication: 2023-02-14 10:00:06 UTC
