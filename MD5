@@ -1,7 +1,7 @@
-a77b8e49b4b44de99e4dd3d6222dd383 *DESCRIPTION
+a76069f2082c1a39654032ce55684576 *DESCRIPTION
 0aaf41158b857283dfd639e6a3cbbd1c *LICENSE
 f1b82aad12e8332811e70c4b87a39cfe *NAMESPACE
-f6f06b020ad77d34315dc02f642c0362 *NEWS.md
+c863d581e2d3f21a330fc41aef26b6e3 *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
 f5f0f0c12bcd3687824f30526f9d98f1 *R/httpuv.R
 838e761ae4242a9e21b0f40509bb7db3 *R/random_port.R
@@ -69,7 +69,7 @@ f05f25fef0e90fa31d4b67cb045a7893 *src/http-parser/AUTHORS
 c2e2ba4b3e30945df55f48c466003696 *src/http.cpp
 5da9e9f35bb1c36c7291b834fd9ca5d0 *src/http.h
 3e4a15d0fd8253600f732001c43decaa *src/httprequest.cpp
-ef00d676a65c8b0529e5108d023daa6b *src/httprequest.h
+2e49777157288a27b49697f3b29d7d71 *src/httprequest.h
 9e93b622a3773977e484068933756b66 *src/httpresponse.cpp
 0d10eff13bfd086ef11d8455779605da *src/httpresponse.h
 7ccfe8fb67256f75ab0189b1cd52643b *src/httpuv.cpp
@@ -547,7 +547,7 @@ d04738abce67c042f3e50a3f3d25a073 *src/thread.cpp
 6a576786c42686f03abc81a0152816dc *src/timegm.h
 108c47bc29ce736bd7db1485e0fc9f02 *src/tqueue.h
 500257d8ac24992f398eaf9b41e5918d *src/utils.cpp
-36abe5790071d6cfc4da284f4dc14881 *src/utils.h
+39012f248d5ca05c7894f19473b8f143 *src/utils.h
 f59c00759662fc244087f55b057c6b98 *src/uvutil.cpp
 3c5ff1b016ddb0bfa2aefcf42f908bce *src/uvutil.h
 ab6c07e7333ff661fdf8f3ba8e20017a *src/webapplication.cpp
@@ -560,8 +560,8 @@ d6b78be899681700261d5758550b9220 *src/webapplication.h
 5bb9432dbc7430ef664c68263e37b4b3 *src/websockets-hybi03.h
 9a897bb570ea75245641cabb96c6aea5 *src/websockets-ietf.cpp
 cba0f06c48ddf75f4a287ef9a1402c7d *src/websockets-ietf.h
-1c6da9b57377e7af426ae092ae06814c *src/websockets.cpp
-45fc82552149f910eee79469309aa411 *src/websockets.h
+867d2a9a1e79f3843acbc5a9b4984cd0 *src/websockets.cpp
+863a29f0cfec488c0aa7e3d78581a484 *src/websockets.h
 d05fb633fb48430f818fb6a00a052186 *src/winutils.cpp
 dbc6d0a2018a6cce3238897ad5f95bbd *src/winutils.h
 e39f8e28b07b86d42998b0daad622ba4 *tests/testthat.R
