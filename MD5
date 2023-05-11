@@ -1,9 +1,9 @@
-a76069f2082c1a39654032ce55684576 *DESCRIPTION
-0aaf41158b857283dfd639e6a3cbbd1c *LICENSE
+238986b077ca6278f418e6131b47c933 *DESCRIPTION
+fb9e952bc6bc94d044513c2ff320b8ff *LICENSE
 f1b82aad12e8332811e70c4b87a39cfe *NAMESPACE
-c863d581e2d3f21a330fc41aef26b6e3 *NEWS.md
+66dbf16ad0798f95874f9bf2410fb9fb *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
-f5f0f0c12bcd3687824f30526f9d98f1 *R/httpuv.R
+7af7330e62533fd32cb24580f6d6e64e *R/httpuv.R
 838e761ae4242a9e21b0f40509bb7db3 *R/random_port.R
 a9a0636bbbaad17dd96fc689a75e411a *R/server.R
 03b2ea160e76b5c09a439cdc5dbb9f32 *R/static_paths.R
@@ -19,7 +19,7 @@ dab57666b7ffc2c7217e141ff652b487 *man/WebServer.Rd
 b80d395977a734527dea2ac41fbed22d *man/WebSocket.Rd
 f0267e905d6f45811eeddfaeab4cc61a *man/encodeURI.Rd
 c68e326b16254a97275b87095083c9d1 *man/getRNGState.Rd
-96542a60a0e7a10c9a4b51bcb26f55f6 *man/httpuv-package.Rd
+3fb86ec22a80927e55444387ff6523ed *man/httpuv-package.Rd
 3c3b47f9c5348cb71cd2efa5c4b4c1da *man/interrupt.Rd
 6be6544b27b5cf16752d84ebc7f20e29 *man/ipFamily.Rd
 22ff652a3c50bafcff47e8e93125c376 *man/listServers.Rd
@@ -35,7 +35,7 @@ ee1935e6c7313e30c55aaaed9b1e36bc *man/startServer.Rd
 0f5374567af47ea1c4302ca714b653fd *man/stopAllServers.Rd
 ce0295e06430001432f1d804cc20a561 *man/stopDaemonizedServer.Rd
 2531673200a9ff50ea9ff1c8da8eb160 *man/stopServer.Rd
-55e5b8efc3ec99dbcdce18d1a3c38398 *src/Makevars
+483dd30d8ddd13b75c74aafe94631618 *src/Makevars
 f61c79b1cbaa33adc4357dab2bea8bff *src/Makevars.ucrt
 4c534871dccf23c28a0102849db940bb *src/Makevars.win
 44ec85f7b261368818f1c7224aba1982 *src/RcppExports-legacy.cpp
@@ -548,8 +548,8 @@ d04738abce67c042f3e50a3f3d25a073 *src/thread.cpp
 108c47bc29ce736bd7db1485e0fc9f02 *src/tqueue.h
 500257d8ac24992f398eaf9b41e5918d *src/utils.cpp
 39012f248d5ca05c7894f19473b8f143 *src/utils.h
-f59c00759662fc244087f55b057c6b98 *src/uvutil.cpp
-3c5ff1b016ddb0bfa2aefcf42f908bce *src/uvutil.h
+2d6a7c1e4a794e17a75d3814b8dab313 *src/uvutil.cpp
+4a2e8ff2aa77dcc3480733408885ccb1 *src/uvutil.h
 ab6c07e7333ff661fdf8f3ba8e20017a *src/webapplication.cpp
 d6b78be899681700261d5758550b9220 *src/webapplication.h
 4c83e213518175d0c8d65cc3aca327c9 *src/websockets-base.cpp
@@ -560,8 +560,8 @@ d6b78be899681700261d5758550b9220 *src/webapplication.h
 5bb9432dbc7430ef664c68263e37b4b3 *src/websockets-hybi03.h
 9a897bb570ea75245641cabb96c6aea5 *src/websockets-ietf.cpp
 cba0f06c48ddf75f4a287ef9a1402c7d *src/websockets-ietf.h
-867d2a9a1e79f3843acbc5a9b4984cd0 *src/websockets.cpp
-863a29f0cfec488c0aa7e3d78581a484 *src/websockets.h
+49f1764e093e65dbae10116a7cd72638 *src/websockets.cpp
+eb73eebe162215da28e31a9fcbdd9e1d *src/websockets.h
 d05fb633fb48430f818fb6a00a052186 *src/winutils.cpp
 dbc6d0a2018a6cce3238897ad5f95bbd *src/winutils.h
 e39f8e28b07b86d42998b0daad622ba4 *tests/testthat.R
