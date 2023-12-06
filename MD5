@@ -1,7 +1,7 @@
-a73789de72fc60999eabecad138f0b44 *DESCRIPTION
+f142c6a44f5151dd3d34c589f01ea8f5 *DESCRIPTION
 fb9e952bc6bc94d044513c2ff320b8ff *LICENSE
 94da093c202c374c8692224d779e9b65 *NAMESPACE
-ea94fecaea83380caefbeda906d7f1ac *NEWS.md
+443bf0ef7430759f7ba404f88ddf08be *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
 0b5dfb8ea553056522ef4895816b31b2 *R/httpuv.R
 6b9b7e6e20b614b19866b6c9fce5c041 *R/random_port.R
@@ -555,7 +555,7 @@ d04738abce67c042f3e50a3f3d25a073 *src/thread.cpp
 39012f248d5ca05c7894f19473b8f143 *src/utils.h
 2d6a7c1e4a794e17a75d3814b8dab313 *src/uvutil.cpp
 4a2e8ff2aa77dcc3480733408885ccb1 *src/uvutil.h
-ab6c07e7333ff661fdf8f3ba8e20017a *src/webapplication.cpp
+69189c5e8bdce651db11e5713c15acb8 *src/webapplication.cpp
 d6b78be899681700261d5758550b9220 *src/webapplication.h
 4c83e213518175d0c8d65cc3aca327c9 *src/websockets-base.cpp
 388cb57d213862e20f294ac34d93b1e9 *src/websockets-base.h
