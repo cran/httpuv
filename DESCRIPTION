@@ -1,7 +1,7 @@
 Type: Package
 Package: httpuv
 Title: HTTP and WebSocket Server Library
-Version: 1.6.13
+Version: 1.6.14
 Authors@R: c(
     person("Joe", "Cheng", , "joe@posit.co", role = "aut"),
     person("Winston", "Chang", , "winston@posit.co", role = c("aut", "cre")),
@@ -58,12 +58,12 @@ Imports: later (>= 0.8.0), promises, R6, Rcpp (>= 1.0.7), utils
 Suggests: callr, curl, testthat, websocket
 LinkingTo: later, Rcpp
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 SystemRequirements: GNU make, zlib
 Collate: 'RcppExports.R' 'httpuv.R' 'random_port.R' 'server.R'
         'staticServer.R' 'static_paths.R' 'utils.R'
 NeedsCompilation: yes
-Packaged: 2023-12-05 23:46:15 UTC; cpsievert
+Packaged: 2024-01-26 22:48:02 UTC; winston
 Author: Joe Cheng [aut],
   Winston Chang [aut, cre],
   Posit, PBC fnd [cph],
@@ -97,4 +97,4 @@ Author: Joe Cheng [aut],
   Igor Sysoev [cph] (http-parser)
 Maintainer: Winston Chang <winston@posit.co>
 Repository: CRAN
-Date/Publication: 2023-12-06 09:20:02 UTC
+Date/Publication: 2024-01-26 23:20:02 UTC
