@@ -1,7 +1,7 @@
-a92ab8df43a673e84d97ffb9f26a8959 *DESCRIPTION
+3db78c5d86767be63bc47b7129fa4933 *DESCRIPTION
 fb9e952bc6bc94d044513c2ff320b8ff *LICENSE
 94da093c202c374c8692224d779e9b65 *NAMESPACE
-2ec4ef6020af26e2159157ee8a8c1ae9 *NEWS.md
+25502f533e9e275c0377ccb5eb52fefa *NEWS.md
 ab533dfc22420dc4c3b3baf7e127d7bd *R/RcppExports.R
 e9884869f436784db930af2f316a02bf *R/httpuv.R
 6b9b7e6e20b614b19866b6c9fce5c041 *R/random_port.R
@@ -11,7 +11,7 @@ c0f48ea8a0be79bd1a8ac4062af7d944 *R/staticServer.R
 73c947c78bb5194937ad564161fe97e4 *R/utils.R
 eda65ff0977b3b874e58444ac1f4ea41 *README.md
 cebeb15d53d25cb4424f5b6d1ede0879 *cleanup
-0c97dc314f946b96d84929294c07f694 *configure
+deb5b0d8f37df7bf4348fd817618d888 *configure
 a0f3e53431a9137cabdaac6ea19005a8 *demo/00Index
 671e18e7e592833ecf6f0fbc182265db *demo/daemon-echo.R
 a7cbd020c872fec211806ac7c1255737 *demo/echo.R
@@ -41,9 +41,9 @@ ff0fbfb3f27a2d6b12dade5eb2e1db1d *man/service.Rd
 0f5374567af47ea1c4302ca714b653fd *man/stopAllServers.Rd
 ce0295e06430001432f1d804cc20a561 *man/stopDaemonizedServer.Rd
 2531673200a9ff50ea9ff1c8da8eb160 *man/stopServer.Rd
-0c6450a73fae99509c8ea1097540e32d *src/Makevars.in
-9e7439810f0dcd883f0d32e2bd71f914 *src/Makevars.ucrt
-4c534871dccf23c28a0102849db940bb *src/Makevars.win
+b5f2205832daa0986678e7abbc52725b *src/Makevars.in
+ec29998947c42cce66b07fbaf9e9d2ab *src/Makevars.ucrt
+f49193a5f501f14cf7077c2006062c86 *src/Makevars.win
 2691b4eabd8f00da340074702edc169b *src/RcppExports.cpp
 995168981245f1ad0f04cdb17ee06544 *src/auto_deleter.h
 f78d1c407da07fc690964e669f263245 *src/base64/base64.cpp
@@ -537,7 +537,7 @@ f9c0c9331f40b3668114adb896aac15e *src/libuv/tools/make_dist_html.py
 d88dea5b6cccc41d572d94b96b533536 *src/libuv/uv_win_longpath.manifest
 5d3f96a84ef58bc0cd4024ac0c8daaca *src/md5.c
 a82cac6df91125d494a3ffd8d9006037 *src/md5.h
-66887162499f5d61d0652ba87d0cb2c2 *src/mime.cpp
+26965e20a7d11878b881faf0b565eebb *src/mime.cpp
 7e09f4f18032cb60fe230bb57bca5847 *src/mime.h
 79136e9134338361076466dda8466351 *src/optional.h
 d64ef6766a1a62bd991c381851e7a98a *src/sha1/sha1.c
@@ -584,10 +584,10 @@ b7975e7bddaececa26e9aa8db9199972 *tests/testthat/test-app.R
 87097296287f34495b3950560ddbc22c *tests/testthat/test-frame-completion.R
 bb5aed04d316f54b6a30d27c1fea84db *tests/testthat/test-http-parse.R
 356b80492c3f60ff3a5994aa09a294f9 *tests/testthat/test-static-paths.R
-06a535135ad960df64607deaa1f827de *tests/testthat/test-staticServer.R
+856d646c6773421b16b46d9980183412 *tests/testthat/test-static-server.R
 55abca5640ecb10b07896f8e23b205f5 *tests/testthat/test-traffic.R
 96043b2c9724bafd20e7349567335e8c *tests/testthat/test-utils.R
 bcda6038be1fe77b4b1a6aa7df248ef1 *tools/Makefile-libuv.mingw
 6a861def74908c909e0ed97a4ed87879 *tools/submit_to_cran.R
 d9fe1be2ebd95ab640d9049551112c12 *tools/update_libuv.R
-8b6584b9951b02d31d268d0fd473f5ba *tools/update_mime.R
+f5c27cd6b1e560b0408b9fe62a325d68 *tools/update_mime.R

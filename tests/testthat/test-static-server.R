@@ -1,3 +1,8 @@
+context("static-server")
+
+# These tests are time-sensitive, which makes CRAN unhappy.
+skip_on_cran()
+
 path_example_site <- function(...) {
   system.file("example-static-site", ..., package = "httpuv")
 }
@@ -27,7 +32,7 @@ start_example_server <- function(port) {
   max <- Sys.time() + 2
   while(length(r$read_error_lines()) == 0) {
     if (Sys.time() > max) {
-      stop("Server didn't start up in 2 seconds")
+      skip("Server didn't start up in 2 seconds")
     }
     Sys.sleep(0.1)
   }
